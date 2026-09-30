@@ -7,6 +7,10 @@ cashless dengan upload bukti transfer.
 **Stack:** Next.js 16 (App Router, Server Actions) · Supabase (Postgres + Storage) ·
 Prisma 7 (schema & migrasi) · shadcn/ui (Radix, Tailwind v4).
 
+**Arsitektur data:** aplikasi mengakses database dan storage **hanya lewat Supabase**
+(`supabase-js` + service role key, di server). Prisma dipakai khusus untuk skema & migrasi
+dari komputer developer, jadi deployment tidak butuh connection string database.
+
 ## Fitur
 
 - **Pilih akun** seperti profil Netflix. Akun terbuka tanpa password; PIN 6 digit opsional
@@ -34,58 +38,46 @@ Prisma 7 (schema & migrasi) · shadcn/ui (Radix, Tailwind v4).
 
 ## Menjalankan di lokal
 
-Tanpa Supabase pun bisa: database memakai `prisma dev` (Postgres lokal) dan gambar disimpan
-di folder `.uploads/`.
-
 ```bash
 npm install
-cp .env.example .env    # lalu isi, lihat contoh lokal di bawah
-npm run db:dev          # Postgres lokal di port 51214 (shadow DB di 51215)
-npx prisma migrate dev  # terapkan migrasi
+cp .env.example .env   # isi SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SESSION_SECRET, ADMIN_PASSWORD
 npm run dev
 ```
 
-Contoh `.env` lokal:
+Buka `/admin`, login, tambahkan pengguna, lalu kembali ke halaman depan. Bucket storage
+(`SUPABASE_BUCKET`, default `nitipdonk`) dibuat otomatis sebagai bucket public saat upload
+pertama.
 
-```env
-DATABASE_URL="postgres://postgres:postgres@localhost:51214/template1?sslmode=disable"
-DIRECT_URL="postgres://postgres:postgres@localhost:51214/template1?sslmode=disable"
-SHADOW_DATABASE_URL="postgres://postgres:postgres@localhost:51215/template1?sslmode=disable"
-SUPABASE_URL=""
-SUPABASE_SERVICE_ROLE_KEY=""
-SESSION_SECRET="string-acak-minimal-16-karakter"
-ADMIN_PASSWORD="password-admin"
-CRON_SECRET="string-acak"
-CLEANUP_PROOF_DAYS="30"
-```
+## Skema & migrasi (Prisma)
 
-Buka `/admin`, login, tambahkan pengguna, lalu kembali ke halaman depan.
+Isi `DIRECT_URL` di `.env` lokal dengan connection string **Session pooler (port 5432)** dari
+Supabase Dashboard → Connect. Variabel ini hanya untuk Prisma dan tidak perlu ada di Vercel.
 
-## Pakai Supabase
+- Terapkan migrasi yang sudah ada ke Supabase: `npm run db:deploy`
+- Mengubah skema:
+  1. Edit `prisma/schema.prisma`.
+  2. Buat migrasi dengan database lokal supaya Supabase tidak tersentuh saat mencoba:
+     `npm run db:dev`, lalu
+     `DIRECT_URL=postgres://postgres:postgres@localhost:51214/template1?sslmode=disable SHADOW_DATABASE_URL=postgres://postgres:postgres@localhost:51215/template1?sslmode=disable npx prisma migrate dev --name <nama>`
+  3. Terapkan ke Supabase: `npm run db:deploy`.
+  4. Generate ulang tipe: `npx supabase gen types typescript --project-id <PROJECT_REF> --schema public > src/lib/database.types.ts`
 
-1. Buat project di Supabase.
-2. **Connect → ORMs → Prisma**: salin connection string pooler (port 6543) ke `DATABASE_URL`
-   dan session/direct (port 5432) ke `DIRECT_URL`.
-3. **Project Settings → API Keys**: isi `SUPABASE_URL` dan `SUPABASE_SERVICE_ROLE_KEY`
-   (service_role atau `sb_secret_...`). Kunci ini hanya dipakai di server.
-4. Terapkan migrasi: `npm run db:deploy`.
-5. Bucket storage (`SUPABASE_BUCKET`, default `nitipdonk`) dibuat otomatis sebagai bucket
-   public saat upload pertama.
+Karena data ditulis lewat Supabase (bukan Prisma Client), nilai bawaan harus dibuat oleh
+database: `id` memakai `dbgenerated("(gen_random_uuid())::text")`, `updatedAt` diisi trigger,
+dan kolom waktu bertipe `@db.Timestamptz(3)`. Ikuti pola yang sama untuk tabel baru.
 
-Migrasi `enable_rls` menyalakan Row Level Security tanpa policy di semua tabel, sehingga
-tabel tidak bisa diakses lewat Data API Supabase (anon key). Prisma tetap bisa karena
-terhubung sebagai pemilik tabel.
+Semua tabel memakai Row Level Security tanpa policy, jadi tidak bisa diakses dengan
+anon/publishable key. Server memakai service role key yang melewati RLS.
 
 ## Deploy (Vercel)
 
 1. Import repo ini sebagai project di Vercel (framework Next.js terdeteksi otomatis).
-2. **Storage → Create Database → Supabase**, lalu hubungkan ke project. Integrasi ini
-   menyuntikkan `POSTGRES_PRISMA_URL`, `POSTGRES_URL_NON_POOLING`, `SUPABASE_URL`, dan
-   `SUPABASE_SERVICE_ROLE_KEY`, yang otomatis dipakai kalau `DATABASE_URL` dkk. tidak diisi.
-3. **Settings → Environment Variables**, tambahkan (tipe *Sensitive*):
-   `SESSION_SECRET` (`openssl rand -base64 32`), `ADMIN_PASSWORD`, dan `CRON_SECRET`.
-4. Deploy. Script `vercel-build` menjalankan `prisma migrate deploy` sebelum `next build`,
-   jadi tabel di Supabase dibuat/diperbarui otomatis setiap deploy.
+2. **Settings → Environment Variables** (tipe *Sensitive* untuk yang rahasia):
+   - wajib: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SESSION_SECRET`
+     (`openssl rand -base64 32`), `ADMIN_PASSWORD`
+   - opsional: `CRON_SECRET`, `CLEANUP_PROOF_DAYS`, `SUPABASE_BUCKET`
+3. Deploy. Build hanya menjalankan `next build`; migrasi dijalankan dari komputer developer
+   dengan `npm run db:deploy`.
 
 Cron di `vercel.json` otomatis mengirim header `Authorization: Bearer $CRON_SECRET`. Kalau
 deploy di tempat lain, panggil endpoint cron dari penjadwal apa pun dengan header yang sama.
@@ -103,7 +95,7 @@ deploy di tempat lain, panggil endpoint cron dari penjadwal apa pun dengan heade
 ```
 prisma/                 schema & migrasi
 src/actions/            server actions (auth, trips, orders, profile, admin)
-src/lib/                prisma, sesi & PIN, storage (Supabase / lokal), kompresi gambar
+src/lib/                klien Supabase + tipe database, sesi & PIN, storage, kompresi gambar
 src/app/                halaman: /, /titipan, /titipan/[id], /pengaturan, /admin, /admin/gambar
 src/components/         komponen aplikasi; src/components/ui berisi komponen shadcn
 ```

@@ -1,8 +1,5 @@
-generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
-}
-
+// Prisma hanya dipakai untuk skema & migrasi. Aplikasi mengakses data lewat
+// Supabase (supabase-js), jadi id, createdAt, dan updatedAt diisi oleh database.
 datasource db {
   provider = "postgresql"
 }
@@ -25,7 +22,7 @@ enum TripStatus {
 }
 
 model User {
-  id             String    @id @default(cuid())
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
   name           String
   avatarId       String?   @unique
   avatar         Image?    @relation("UserAvatar", fields: [avatarId], references: [id], onDelete: SetNull)
@@ -36,11 +33,11 @@ model User {
   // PIN opsional; null = akun terbuka tanpa PIN
   pinHash        String?
   pinFailedCount Int       @default(0)
-  pinLockedUntil DateTime?
+  pinLockedUntil DateTime? @db.Timestamptz(3)
   // Dinaikkan setiap PIN berubah supaya sesi lama di perangkat lain ikut keluar
   sessionVersion Int       @default(0)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime  @default(now()) @updatedAt @db.Timestamptz(3)
 
   trips  Trip[]
   orders Order[]
@@ -48,15 +45,15 @@ model User {
 
 // Satu "titipan live": seseorang pergi beli sesuatu dan membuka titipan untuk yang lain
 model Trip {
-  id        String     @id @default(cuid())
+  id        String     @id @default(dbgenerated("(gen_random_uuid())::text"))
   hostId    String
   host      User       @relation(fields: [hostId], references: [id], onDelete: Cascade)
   title     String
   note      String?
-  closesAt  DateTime?
+  closesAt  DateTime?  @db.Timestamptz(3)
   status    TripStatus @default(OPEN)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  createdAt DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime   @default(now()) @updatedAt @db.Timestamptz(3)
 
   orders Order[]
 
@@ -65,7 +62,7 @@ model Trip {
 
 // Satu pesanan titip dalam sebuah Trip
 model Order {
-  id            String        @id @default(cuid())
+  id            String        @id @default(dbgenerated("(gen_random_uuid())::text"))
   tripId        String
   trip          Trip          @relation(fields: [tripId], references: [id], onDelete: Cascade)
   userId        String
@@ -76,8 +73,8 @@ model Order {
   proofId       String?       @unique
   proof         Image?        @relation(fields: [proofId], references: [id], onDelete: SetNull)
   isPaid        Boolean       @default(false)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  createdAt     DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime      @default(now()) @updatedAt @db.Timestamptz(3)
 
   @@index([tripId])
   @@index([userId])
@@ -85,13 +82,13 @@ model Order {
 
 // Semua gambar yang tersimpan di storage (sudah dikompres)
 model Image {
-  id        String    @id @default(cuid())
+  id        String    @id @default(dbgenerated("(gen_random_uuid())::text"))
   kind      ImageKind
   path      String    @unique
   size      Int
   width     Int
   height    Int
-  createdAt DateTime  @default(now())
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
 
   avatarOf    User?  @relation("UserAvatar")
   paymentQrOf User?  @relation("UserPaymentQr")

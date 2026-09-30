@@ -6,10 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
-import { ImageKind } from "@/generated/prisma/enums";
+import { Constants, type Enums } from "@/lib/database.types";
 import { formatBytes, formatDateTime, formatRelative } from "@/lib/format";
-import { imageUrl } from "@/lib/images";
-import { prisma } from "@/lib/prisma";
+import { imageStats, imageUrl } from "@/lib/images";
+import { db, must } from "@/lib/supabase";
+
+type ImageKind = Enums<"ImageKind">;
+const IMAGE_KINDS = Constants.public.Enums.ImageKind;
 
 const KIND_LABEL: Record<ImageKind, string> = {
   PROOF: "Bukti bayar",
@@ -21,37 +24,38 @@ const PAGE_SIZE = 60;
 
 export default async function AdminImagesPage({ searchParams }: PageProps<"/admin/gambar">) {
   const { jenis } = await searchParams;
-  const kind = Object.values(ImageKind).find((value) => value === jenis);
+  const kind = IMAGE_KINDS.find((value) => value === jenis);
 
-  const [stats, images] = await Promise.all([
-    prisma.image.groupBy({ by: ["kind"], _count: { _all: true }, _sum: { size: true } }),
-    prisma.image.findMany({
-      where: kind ? { kind } : undefined,
-      orderBy: { createdAt: "desc" },
-      take: PAGE_SIZE,
-      include: {
-        avatarOf: { select: { name: true } },
-        paymentQrOf: { select: { name: true } },
-        proofOf: { select: { user: { select: { name: true } }, trip: { select: { title: true } } } },
-      },
-    }),
+  const imagesQuery = db()
+    .from("Image")
+    .select(
+      `*,
+      avatarOf:User!User_avatarId_fkey(name),
+      paymentQrOf:User!User_paymentQrId_fkey(name),
+      proofOf:Order!Order_proofId_fkey(user:User!Order_userId_fkey(name), trip:Trip!Order_tripId_fkey(title))`,
+    );
+  const [stats, imagesResult] = await Promise.all([
+    imageStats(),
+    (kind ? imagesQuery.eq("kind", kind) : imagesQuery)
+      .order("createdAt", { ascending: false })
+      .limit(PAGE_SIZE),
   ]);
+  const images = must(imagesResult);
 
-  const statFor = (value: ImageKind) => stats.find((stat) => stat.kind === value);
-  const totalCount = stats.reduce((sum, stat) => sum + stat._count._all, 0);
-  const totalBytes = stats.reduce((sum, stat) => sum + (stat._sum.size ?? 0), 0);
+  const totalCount = IMAGE_KINDS.reduce((sum, value) => sum + stats[value].count, 0);
+  const totalBytes = IMAGE_KINDS.reduce((sum, value) => sum + stats[value].bytes, 0);
   const defaultDays = Number(process.env.CLEANUP_PROOF_DAYS ?? 30) || 30;
 
   return (
     <>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard label="Total" count={totalCount} bytes={totalBytes} />
-        {Object.values(ImageKind).map((value) => (
+        {IMAGE_KINDS.map((value) => (
           <StatCard
             key={value}
             label={KIND_LABEL[value]}
-            count={statFor(value)?._count._all ?? 0}
-            bytes={statFor(value)?._sum.size ?? 0}
+            count={stats[value].count}
+            bytes={stats[value].bytes}
           />
         ))}
       </div>
@@ -74,7 +78,7 @@ export default async function AdminImagesPage({ searchParams }: PageProps<"/admi
           <h2 className="font-heading text-lg font-semibold tracking-tight">Gambar terbaru</h2>
           <div className="flex flex-wrap gap-1">
             <FilterLink href="/admin/gambar" active={!kind} label="Semua" />
-            {Object.values(ImageKind).map((value) => (
+            {IMAGE_KINDS.map((value) => (
               <FilterLink
                 key={value}
                 href={`/admin/gambar?jenis=${value}`}
@@ -98,10 +102,11 @@ export default async function AdminImagesPage({ searchParams }: PageProps<"/admi
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
             {images.map((image) => {
+              const proof = one(image.proofOf);
               const owner =
-                image.avatarOf?.name ??
-                image.paymentQrOf?.name ??
-                (image.proofOf ? `${image.proofOf.user.name} · ${image.proofOf.trip.title}` : "Tidak terpakai");
+                one(image.avatarOf)?.name ??
+                one(image.paymentQrOf)?.name ??
+                (proof ? `${proof.user.name} · ${proof.trip.title}` : "Tidak terpakai");
               return (
                 <Card key={image.id} size="sm" className="pt-0">
                   <ImagePreview
@@ -136,6 +141,11 @@ export default async function AdminImagesPage({ searchParams }: PageProps<"/admi
       </section>
     </>
   );
+}
+
+/** Relasi balik dari Image bisa berupa array atau objek, tergantung deteksi one-to-one PostgREST. */
+function one<T>(value: T | T[] | null | undefined) {
+  return Array.isArray(value) ? value[0] : (value ?? undefined);
 }
 
 function StatCard({ label, count, bytes }: { label: string; count: number; bytes: number }) {

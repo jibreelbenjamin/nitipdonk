@@ -22,8 +22,8 @@ export type TripCardData = {
   title: string;
   note: string | null;
   status: "OPEN" | "CLOSED" | "DONE";
-  closesAt: Date | null;
-  createdAt: Date;
+  closesAt: string | null;
+  createdAt: string;
   host: Person;
   orders: { user: Person }[];
 };

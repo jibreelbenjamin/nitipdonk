@@ -32,23 +32,25 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/
 import { Item, ItemActions, ItemContent, ItemGroup, ItemMedia, ItemTitle } from "@/components/ui/item";
 import { formatDateTime, formatRelative, formatRupiah } from "@/lib/format";
 import { imageUrl } from "@/lib/images";
-import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
+import { db, must } from "@/lib/supabase";
 import { isAcceptingOrders } from "@/lib/trips";
 
 export default async function TripPage({ params }: PageProps<"/titipan/[id]">) {
   const { id } = await params;
   const user = await requireUser();
-  const trip = await prisma.trip.findUnique({
-    where: { id },
-    include: {
-      host: { include: { avatar: true, paymentQr: true } },
-      orders: {
-        orderBy: { createdAt: "asc" },
-        include: { user: { include: { avatar: true } }, proof: true },
-      },
-    },
-  });
+  const trip = must(
+    await db()
+      .from("Trip")
+      .select(
+        `*,
+        host:User!Trip_hostId_fkey(id, name, paymentInfo, avatar:Image!User_avatarId_fkey(*), paymentQr:Image!User_paymentQrId_fkey(*)),
+        orders:Order(*, user:User!Order_userId_fkey(id, name, avatar:Image!User_avatarId_fkey(*)), proof:Image!Order_proofId_fkey(*))`,
+      )
+      .eq("id", id)
+      .order("createdAt", { referencedTable: "orders" })
+      .maybeSingle(),
+  );
   if (!trip) notFound();
 
   const isHost = trip.hostId === user.id;

@@ -3,7 +3,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { prisma } from "./prisma";
+import { db, must } from "./supabase";
 
 const USER_COOKIE = "nd_user";
 const ADMIN_COOKIE = "nd_admin";
@@ -53,10 +53,13 @@ export const getCurrentUser = cache(async () => {
   if (!id || !version || !signature) return null;
   if (!safeEqual(signature, sign(`${id}.${version}`))) return null;
 
-  const user = await prisma.user.findUnique({
-    where: { id },
-    include: { avatar: true, paymentQr: true },
-  });
+  const user = must(
+    await db()
+      .from("User")
+      .select("*, avatar:Image!User_avatarId_fkey(*), paymentQr:Image!User_paymentQrId_fkey(*)")
+      .eq("id", id)
+      .maybeSingle(),
+  );
   if (!user || user.sessionVersion !== Number(version)) return null;
   return user;
 });

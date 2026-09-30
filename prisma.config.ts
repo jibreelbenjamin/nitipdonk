@@ -1,16 +1,17 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
+// Prisma hanya dipakai untuk migrasi dari komputer developer; aplikasi sendiri
+// mengakses data lewat Supabase, jadi DIRECT_URL tidak perlu diset di Vercel.
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
   },
   datasource: {
-    // Migrasi butuh koneksi langsung / session mode (bukan pooler transaction mode) di Supabase.
-    // POSTGRES_URL_NON_POOLING disuntikkan integrasi Supabase di Vercel.
-    url: process.env.DIRECT_URL ?? process.env.POSTGRES_URL_NON_POOLING ?? process.env.DATABASE_URL,
-    // Opsional; dibutuhkan saat `prisma migrate dev` memakai `prisma dev` (lokal)
+    // Koneksi langsung / session pooler (port 5432), bukan transaction pooler
+    url: process.env.DIRECT_URL ?? process.env.DATABASE_URL,
+    // Opsional; dibutuhkan saat membuat migrasi dengan database lokal `npm run db:dev`
     shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL,
   },
 });

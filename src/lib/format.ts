@@ -10,28 +10,28 @@ export function formatRupiah(value: number) {
   return rupiah.format(value);
 }
 
-export function formatTime(date: Date) {
+export function formatTime(date: Date | string) {
   return new Intl.DateTimeFormat("id-ID", {
     timeZone: TIME_ZONE,
     hour: "2-digit",
     minute: "2-digit",
-  }).format(date);
+  }).format(new Date(date));
 }
 
-export function formatDateTime(date: Date) {
+export function formatDateTime(date: Date | string) {
   return new Intl.DateTimeFormat("id-ID", {
     timeZone: TIME_ZONE,
     day: "numeric",
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(date);
+  }).format(new Date(date));
 }
 
 const relative = new Intl.RelativeTimeFormat("id-ID", { numeric: "auto" });
 
-export function formatRelative(date: Date, now = new Date()) {
-  const seconds = (date.getTime() - now.getTime()) / 1000;
+export function formatRelative(date: Date | string, now = new Date()) {
+  const seconds = (new Date(date).getTime() - now.getTime()) / 1000;
   const abs = Math.abs(seconds);
   if (abs < 60) return seconds < 0 ? "baru saja" : "sebentar lagi";
   if (abs < 3600) return relative.format(Math.round(seconds / 60), "minute");

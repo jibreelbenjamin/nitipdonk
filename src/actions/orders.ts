@@ -1,7 +1,6 @@
 "use server";
 
 import { refresh } from "next/cache";
-import { PaymentMethod } from "@/generated/prisma/enums";
 import {
   ActionError,
   type ActionResult,
@@ -11,20 +10,26 @@ import {
   runAction,
 } from "@/lib/action";
 import { deleteImages, saveImage } from "@/lib/images";
-import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
+import { db, must } from "@/lib/supabase";
 import { isAcceptingOrders } from "@/lib/trips";
 
 function getPaymentMethod(formData: FormData) {
   const value = getString(formData, "paymentMethod", 10);
-  if (value !== PaymentMethod.CASH && value !== PaymentMethod.CASHLESS) {
+  if (value !== "CASH" && value !== "CASHLESS") {
     throw new ActionError("Pilih metode bayar");
   }
   return value;
 }
 
 async function findOrder(orderId: string) {
-  const order = await prisma.order.findUnique({ where: { id: orderId }, include: { trip: true } });
+  const order = must(
+    await db()
+      .from("Order")
+      .select("*, trip:Trip!Order_tripId_fkey(*)")
+      .eq("id", orderId)
+      .maybeSingle(),
+  );
   if (!order) throw new ActionError("Titipan tidak ditemukan");
   return order;
 }
@@ -32,7 +37,9 @@ async function findOrder(orderId: string) {
 export async function createOrder(_prev: ActionResult | null, formData: FormData) {
   const result = await runAction(async () => {
     const user = await requireUser();
-    const trip = await prisma.trip.findUnique({ where: { id: getString(formData, "tripId", 40) } });
+    const trip = must(
+      await db().from("Trip").select().eq("id", getString(formData, "tripId", 40)).maybeSingle(),
+    );
     if (!trip) throw new ActionError("Titipan tidak ditemukan");
     if (!isAcceptingOrders(trip)) throw new ActionError("Titipan ini sudah ditutup");
 
@@ -43,16 +50,16 @@ export async function createOrder(_prev: ActionResult | null, formData: FormData
     const proofFile = paymentMethod === "CASHLESS" ? getFile(formData, "proof") : null;
 
     const proof = proofFile ? await saveImage(proofFile, "PROOF") : null;
-    await prisma.order.create({
-      data: {
+    must(
+      await db().from("Order").insert({
         tripId: trip.id,
         userId: user.id,
         items,
         price,
         paymentMethod,
-        proofId: proof?.id,
-      },
-    });
+        proofId: proof?.id ?? null,
+      }),
+    );
   });
   if (result.ok) refresh();
   return result;
@@ -70,16 +77,18 @@ export async function updateOrder(_prev: ActionResult | null, formData: FormData
 
     const price = getPrice(formData, "price");
     if (!isOwner) {
-      await prisma.order.update({ where: { id: order.id }, data: { price } });
+      must(await db().from("Order").update({ price }).eq("id", order.id));
       return;
     }
 
     const items = getString(formData, "items", 500);
     if (!items) throw new ActionError("Tulis mau titip apa");
-    await prisma.order.update({
-      where: { id: order.id },
-      data: { items, price, paymentMethod: getPaymentMethod(formData) },
-    });
+    must(
+      await db()
+        .from("Order")
+        .update({ items, price, paymentMethod: getPaymentMethod(formData) })
+        .eq("id", order.id),
+    );
   });
   if (result.ok) refresh();
   return result;
@@ -96,10 +105,12 @@ export async function uploadProof(_prev: ActionResult | null, formData: FormData
     if (!file) throw new ActionError("Pilih foto bukti pembayaran");
 
     const proof = await saveImage(file, "PROOF");
-    await prisma.order.update({
-      where: { id: order.id },
-      data: { proofId: proof.id, paymentMethod: "CASHLESS" },
-    });
+    must(
+      await db()
+        .from("Order")
+        .update({ proofId: proof.id, paymentMethod: "CASHLESS" })
+        .eq("id", order.id),
+    );
     await deleteImages([order.proofId]);
   });
   if (result.ok) refresh();
@@ -113,7 +124,7 @@ export async function setOrderPaid(orderId: string, isPaid: boolean) {
     if (order.trip.hostId !== user.id) {
       throw new ActionError("Hanya pembuka titipan yang bisa menandai lunas");
     }
-    await prisma.order.update({ where: { id: order.id }, data: { isPaid } });
+    must(await db().from("Order").update({ isPaid }).eq("id", order.id));
   });
   refresh();
   return result;
@@ -133,7 +144,7 @@ export async function deleteOrder(orderId: string) {
     if (order.trip.status === "DONE") throw new ActionError("Titipan sudah selesai");
 
     await deleteImages([order.proofId]);
-    await prisma.order.delete({ where: { id: order.id } });
+    must(await db().from("Order").delete().eq("id", order.id));
   });
   refresh();
   return result;

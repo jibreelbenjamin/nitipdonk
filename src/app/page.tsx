@@ -7,16 +7,18 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { imageUrl } from "@/lib/images";
-import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
+import { db, must } from "@/lib/supabase";
 
 export default async function HomePage() {
   if (await getCurrentUser()) redirect("/titipan");
 
-  const users = await prisma.user.findMany({
-    orderBy: { name: "asc" },
-    select: { id: true, name: true, pinHash: true, avatar: { select: { path: true } } },
-  });
+  const users = must(
+    await db()
+      .from("User")
+      .select("id, name, pinHash, avatar:Image!User_avatarId_fkey(path)")
+      .order("name"),
+  );
   const profiles = users.map((user) => ({
     id: user.id,
     name: user.name,

@@ -4,17 +4,24 @@ import { redirect } from "next/navigation";
 import { ActionError, runAction } from "@/lib/action";
 import { PIN_LOCK_MINUTES, PIN_MAX_ATTEMPTS } from "@/lib/constants";
 import { verifyPin } from "@/lib/pin";
-import { prisma } from "@/lib/prisma";
 import { clearUserSession, setUserSession } from "@/lib/session";
+import { db, must } from "@/lib/supabase";
 
 export async function signIn(userId: string, pin?: string) {
   return runAction(async () => {
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = must(
+      await db()
+        .from("User")
+        .select("id, pinHash, pinFailedCount, pinLockedUntil, sessionVersion")
+        .eq("id", userId)
+        .maybeSingle(),
+    );
     if (!user) throw new ActionError("Akun tidak ditemukan");
 
     if (user.pinHash) {
-      if (user.pinLockedUntil && user.pinLockedUntil > new Date()) {
-        const minutes = Math.ceil((user.pinLockedUntil.getTime() - Date.now()) / 60000);
+      const lockedUntil = user.pinLockedUntil ? new Date(user.pinLockedUntil) : null;
+      if (lockedUntil && lockedUntil > new Date()) {
+        const minutes = Math.ceil((lockedUntil.getTime() - Date.now()) / 60000);
         throw new ActionError(`Terlalu banyak percobaan. Coba lagi dalam ${minutes} menit.`);
       }
       if (!pin) throw new ActionError("Masukkan PIN");
@@ -22,13 +29,17 @@ export async function signIn(userId: string, pin?: string) {
       if (!(await verifyPin(pin, user.pinHash))) {
         const failed = user.pinFailedCount + 1;
         const locked = failed >= PIN_MAX_ATTEMPTS;
-        await prisma.user.update({
-          where: { id: user.id },
-          data: {
-            pinFailedCount: locked ? 0 : failed,
-            pinLockedUntil: locked ? new Date(Date.now() + PIN_LOCK_MINUTES * 60000) : null,
-          },
-        });
+        must(
+          await db()
+            .from("User")
+            .update({
+              pinFailedCount: locked ? 0 : failed,
+              pinLockedUntil: locked
+                ? new Date(Date.now() + PIN_LOCK_MINUTES * 60000).toISOString()
+                : null,
+            })
+            .eq("id", user.id),
+        );
         throw new ActionError(
           locked
             ? `PIN salah ${PIN_MAX_ATTEMPTS}x. Akun dikunci ${PIN_LOCK_MINUTES} menit.`
@@ -36,7 +47,7 @@ export async function signIn(userId: string, pin?: string) {
         );
       }
       if (user.pinFailedCount > 0) {
-        await prisma.user.update({ where: { id: user.id }, data: { pinFailedCount: 0 } });
+        must(await db().from("User").update({ pinFailedCount: 0 }).eq("id", user.id));
       }
     }
 

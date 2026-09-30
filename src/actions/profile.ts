@@ -5,8 +5,8 @@ import { ActionError, type ActionResult, getFile, getString, runAction } from "@
 import { PIN_LENGTH } from "@/lib/constants";
 import { deleteImages, saveImage } from "@/lib/images";
 import { hashPin, isValidPin, verifyPin } from "@/lib/pin";
-import { prisma } from "@/lib/prisma";
 import { requireUser, setUserSession } from "@/lib/session";
+import { db, must } from "@/lib/supabase";
 
 export async function updateProfile(_prev: ActionResult | null, formData: FormData) {
   const result = await runAction(async () => {
@@ -21,7 +21,7 @@ export async function updateProfile(_prev: ActionResult | null, formData: FormDa
     if (avatarFile) avatarId = (await saveImage(avatarFile, "AVATAR")).id;
     else if (removeAvatar) avatarId = null;
 
-    await prisma.user.update({ where: { id: user.id }, data: { name, avatarId } });
+    must(await db().from("User").update({ name, avatarId }).eq("id", user.id));
     if (avatarId !== undefined) await deleteImages([user.avatarId]);
   });
   if (result.ok) refresh();
@@ -39,10 +39,12 @@ export async function updatePayment(_prev: ActionResult | null, formData: FormDa
     if (qrFile) paymentQrId = (await saveImage(qrFile, "PAYMENT_QR")).id;
     else if (removeQr) paymentQrId = null;
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { paymentInfo: paymentInfo || null, paymentQrId },
-    });
+    must(
+      await db()
+        .from("User")
+        .update({ paymentInfo: paymentInfo || null, paymentQrId })
+        .eq("id", user.id),
+    );
     if (paymentQrId !== undefined) await deleteImages([user.paymentQrId]);
   });
   if (result.ok) refresh();
@@ -67,15 +69,19 @@ export async function setPin(_prev: ActionResult<"set" | "changed"> | null, form
     }
 
     // sessionVersion naik → sesi akun ini di perangkat lain otomatis keluar
-    const updated = await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        pinHash: await hashPin(pin),
-        pinFailedCount: 0,
-        pinLockedUntil: null,
-        sessionVersion: { increment: 1 },
-      },
-    });
+    const updated = must(
+      await db()
+        .from("User")
+        .update({
+          pinHash: await hashPin(pin),
+          pinFailedCount: 0,
+          pinLockedUntil: null,
+          sessionVersion: user.sessionVersion + 1,
+        })
+        .eq("id", user.id)
+        .select("id, sessionVersion")
+        .single(),
+    );
     await setUserSession(updated);
     return user.pinHash ? ("changed" as const) : ("set" as const);
   });
@@ -88,10 +94,12 @@ export async function removePin(_prev: ActionResult | null, formData: FormData) 
     const user = await requireUser();
     if (!user.pinHash) throw new ActionError("Akun ini belum memakai PIN");
     await checkCurrentPin(user.pinHash, formData);
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { pinHash: null, pinFailedCount: 0, pinLockedUntil: null },
-    });
+    must(
+      await db()
+        .from("User")
+        .update({ pinHash: null, pinFailedCount: 0, pinLockedUntil: null })
+        .eq("id", user.id),
+    );
   });
   if (result.ok) refresh();
   return result;

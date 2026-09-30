@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatTime } from "@/lib/format";
 import { isAcceptingOrders } from "@/lib/trips";
 
-type Trip = { status: "OPEN" | "CLOSED" | "DONE"; closesAt: Date | null };
+type Trip = { status: "OPEN" | "CLOSED" | "DONE"; closesAt: string | null };
 
 export function TripStatusBadge({ trip }: { trip: Trip }) {
   if (trip.status === "DONE") {

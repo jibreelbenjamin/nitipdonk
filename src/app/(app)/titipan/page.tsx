@@ -5,39 +5,35 @@ import { TripCard, type TripCardData } from "@/components/trip-card";
 import { Badge } from "@/components/ui/badge";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
+import { db, must } from "@/lib/supabase";
 import { liveSince } from "@/lib/trips";
 
-const person = { select: { id: true, name: true, avatar: { select: { path: true } } } };
-const tripSelect = {
-  id: true,
-  title: true,
-  note: true,
-  status: true,
-  closesAt: true,
-  createdAt: true,
-  host: person,
-  orders: { select: { user: person }, orderBy: { createdAt: "asc" as const } },
-};
+const PERSON = "id, name, avatar:Image!User_avatarId_fkey(path)";
+const TRIP_CARD = `id, title, note, status, closesAt, createdAt, host:User!Trip_hostId_fkey(${PERSON}), orders:Order(user:User!Order_userId_fkey(${PERSON}))` as const;
 
 export default async function TripsPage() {
   const user = await requireUser();
-  const since = liveSince();
+  const since = liveSince().toISOString();
 
-  const [live, history] = await Promise.all([
-    prisma.trip.findMany({
-      where: { status: { not: "DONE" }, createdAt: { gte: since } },
-      orderBy: { createdAt: "desc" },
-      select: tripSelect,
-    }),
-    prisma.trip.findMany({
-      where: { OR: [{ status: "DONE" }, { createdAt: { lt: since } }] },
-      orderBy: { createdAt: "desc" },
-      take: 20,
-      select: tripSelect,
-    }),
+  const [liveResult, historyResult] = await Promise.all([
+    db()
+      .from("Trip")
+      .select(TRIP_CARD)
+      .neq("status", "DONE")
+      .gte("createdAt", since)
+      .order("createdAt", { ascending: false })
+      .order("createdAt", { referencedTable: "orders" }),
+    db()
+      .from("Trip")
+      .select(TRIP_CARD)
+      .or(`status.eq.DONE,createdAt.lt."${since}"`)
+      .order("createdAt", { ascending: false })
+      .order("createdAt", { referencedTable: "orders" })
+      .limit(20),
   ]);
+  const live = must(liveResult);
+  const history = must(historyResult);
 
   return (
     <div className="flex flex-col gap-6">

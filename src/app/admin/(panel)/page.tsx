@@ -6,13 +6,15 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDateTime } from "@/lib/format";
 import { imageUrl } from "@/lib/images";
-import { prisma } from "@/lib/prisma";
+import { db, must } from "@/lib/supabase";
 
 export default async function AdminUsersPage() {
-  const users = await prisma.user.findMany({
-    orderBy: { name: "asc" },
-    include: { avatar: true, _count: { select: { trips: true, orders: true } } },
-  });
+  const users = must(
+    await db()
+      .from("User")
+      .select("id, name, pinHash, createdAt, avatar:Image!User_avatarId_fkey(path), trips:Trip(count), orders:Order(count)")
+      .order("name"),
+  );
 
   return (
     <Card>
@@ -58,8 +60,8 @@ export default async function AdminUsersPage() {
                   <TableCell>
                     <PinToggle user={{ id: user.id, name: user.name, hasPin: Boolean(user.pinHash) }} />
                   </TableCell>
-                  <TableCell className="hidden text-right tabular-nums sm:table-cell">{user._count.trips}</TableCell>
-                  <TableCell className="hidden text-right tabular-nums sm:table-cell">{user._count.orders}</TableCell>
+                  <TableCell className="hidden text-right tabular-nums sm:table-cell">{user.trips[0]?.count ?? 0}</TableCell>
+                  <TableCell className="hidden text-right tabular-nums sm:table-cell">{user.orders[0]?.count ?? 0}</TableCell>
                   <TableCell className="hidden text-muted-foreground md:table-cell">
                     {formatDateTime(user.createdAt)}
                   </TableCell>
