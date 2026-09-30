@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ImageKind {
+  AVATAR // foto profil
+  PAYMENT_QR // gambar info pembayaran (QRIS, dsb.)
+  PROOF // bukti pembayaran titipan
+}
+
+enum PaymentMethod {
+  CASH
+  CASHLESS
+}
+
+enum TripStatus {
+  OPEN // masih menerima titipan
+  CLOSED // tidak menerima titipan lagi (sedang dibelikan)
+  DONE // selesai
+}
+
+model User {
+  id             String    @id @default(cuid())
+  name           String
+  avatarId       String?   @unique
+  avatar         Image?    @relation("UserAvatar", fields: [avatarId], references: [id], onDelete: SetNull)
+  // Info pembayaran: teks (no. rekening / e-wallet) dan/atau gambar (QRIS)
+  paymentInfo    String?
+  paymentQrId    String?   @unique
+  paymentQr      Image?    @relation("UserPaymentQr", fields: [paymentQrId], references: [id], onDelete: SetNull)
+  // PIN opsional; null = akun terbuka tanpa PIN
+  pinHash        String?
+  pinFailedCount Int       @default(0)
+  pinLockedUntil DateTime?
+  // Dinaikkan setiap PIN berubah supaya sesi lama di perangkat lain ikut keluar
+  sessionVersion Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  trips  Trip[]
+  orders Order[]
+}
+
+// Satu "titipan live": seseorang pergi beli sesuatu dan membuka titipan untuk yang lain
+model Trip {
+  id        String     @id @default(cuid())
+  hostId    String
+  host      User       @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  title     String
+  note      String?
+  closesAt  DateTime?
+  status    TripStatus @default(OPEN)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  orders Order[]
+
+  @@index([status, createdAt])
+}
+
+// Satu pesanan titip dalam sebuah Trip
+model Order {
+  id            String        @id @default(cuid())
+  tripId        String
+  trip          Trip          @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items         String
+  price         Int?
+  paymentMethod PaymentMethod
+  proofId       String?       @unique
+  proof         Image?        @relation(fields: [proofId], references: [id], onDelete: SetNull)
+  isPaid        Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([tripId])
+  @@index([userId])
+}
+
+// Semua gambar yang tersimpan di storage (sudah dikompres)
+model Image {
+  id        String    @id @default(cuid())
+  kind      ImageKind
+  path      String    @unique
+  size      Int
+  width     Int
+  height    Int
+  createdAt DateTime  @default(now())
+
+  avatarOf    User?  @relation("UserAvatar")
+  paymentQrOf User?  @relation("UserPaymentQr")
+  proofOf     Order?
+
+  @@index([kind, createdAt])
+}
