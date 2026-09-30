@@ -78,9 +78,17 @@ terhubung sebagai pemilik tabel.
 
 ## Deploy (Vercel)
 
-Isi semua env di atas di Project Settings → Environment Variables. Cron di `vercel.json`
-otomatis mengirim header `Authorization: Bearer $CRON_SECRET`. Kalau deploy di tempat lain,
-panggil endpoint cron dari penjadwal apa pun dengan header yang sama.
+1. Import repo ini sebagai project di Vercel (framework Next.js terdeteksi otomatis).
+2. **Storage → Create Database → Supabase**, lalu hubungkan ke project. Integrasi ini
+   menyuntikkan `POSTGRES_PRISMA_URL`, `POSTGRES_URL_NON_POOLING`, `SUPABASE_URL`, dan
+   `SUPABASE_SERVICE_ROLE_KEY`, yang otomatis dipakai kalau `DATABASE_URL` dkk. tidak diisi.
+3. **Settings → Environment Variables**, tambahkan (tipe *Sensitive*):
+   `SESSION_SECRET` (`openssl rand -base64 32`), `ADMIN_PASSWORD`, dan `CRON_SECRET`.
+4. Deploy. Script `vercel-build` menjalankan `prisma migrate deploy` sebelum `next build`,
+   jadi tabel di Supabase dibuat/diperbarui otomatis setiap deploy.
+
+Cron di `vercel.json` otomatis mengirim header `Authorization: Bearer $CRON_SECRET`. Kalau
+deploy di tempat lain, panggil endpoint cron dari penjadwal apa pun dengan header yang sama.
 
 ## Catatan keamanan
 

@@ -4,11 +4,14 @@ import path from "node:path";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 const BUCKET = process.env.SUPABASE_BUCKET || "nitipdonk";
+// Nama kedua adalah yang disuntikkan integrasi Supabase di Vercel
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
 // Fallback khusus development saat Supabase belum dikonfigurasi
 const LOCAL_DIR = path.join(process.cwd(), ".uploads");
 
 function isSupabaseConfigured() {
-  return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+  return Boolean(SUPABASE_URL && SUPABASE_KEY);
 }
 
 function isLocalStorage() {
@@ -23,7 +26,7 @@ let client: SupabaseClient | undefined;
 let bucketReady: Promise<void> | undefined;
 
 function supabase() {
-  client ??= createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+  client ??= createClient(SUPABASE_URL!, SUPABASE_KEY!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   return client;
@@ -81,7 +84,7 @@ export async function removeObjects(keys: string[]) {
 
 export function publicUrl(key: string) {
   if (!isSupabaseConfigured()) return `/api/uploads/${key}`;
-  return `${process.env.SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${key}`;
+  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${key}`;
 }
 
 /** Hanya untuk route /api/uploads saat development. */
