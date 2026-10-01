@@ -20,6 +20,8 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "NitipDonk",
   description: "Titip makanan & minuman bareng teman kantor",
+  // Supaya terbuka layar penuh saat dipasang lewat "Tambah ke Layar Utama" di iPhone/iPad
+  appleWebApp: { capable: true, title: "NitipDonk", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {
