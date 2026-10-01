@@ -5,6 +5,7 @@ import { KeyRoundIcon } from "lucide-react";
 import { changeAdminPassword } from "@/actions/admin";
 import { useFormAction } from "@/hooks/use-action-feedback";
 import { ADMIN_PASSWORD_MIN_LENGTH } from "@/lib/constants";
+import { PasswordInput } from "@/components/password-input";
 import { SubmitButton } from "@/components/submit-button";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +19,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 
 export function ChangePasswordDialog() {
   const [open, setOpen] = useState(false);
@@ -44,10 +44,9 @@ export function ChangePasswordDialog() {
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="admin-current-password">Password lama</FieldLabel>
-                <Input
+                <PasswordInput
                   id="admin-current-password"
                   name="currentPassword"
-                  type="password"
                   autoComplete="current-password"
                   required
                   autoFocus
@@ -55,10 +54,9 @@ export function ChangePasswordDialog() {
               </Field>
               <Field>
                 <FieldLabel htmlFor="admin-new-password">Password baru</FieldLabel>
-                <Input
+                <PasswordInput
                   id="admin-new-password"
                   name="password"
-                  type="password"
                   autoComplete="new-password"
                   minLength={ADMIN_PASSWORD_MIN_LENGTH}
                   required
@@ -67,10 +65,9 @@ export function ChangePasswordDialog() {
               </Field>
               <Field>
                 <FieldLabel htmlFor="admin-confirm-password">Ulangi password baru</FieldLabel>
-                <Input
+                <PasswordInput
                   id="admin-confirm-password"
                   name="confirmPassword"
-                  type="password"
                   autoComplete="new-password"
                   minLength={ADMIN_PASSWORD_MIN_LENGTH}
                   required

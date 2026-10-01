@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
+import { useParams } from "next/navigation";
 import { CloudCheckIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { saveOfflineTrip, useOfflineTrips, type OfflineTrip } from "@/lib/offline-trips";
+import { removeOfflineTrip, saveOfflineTrip, useOfflineTrips, type OfflineTrip } from "@/lib/offline-trips";
 
 /** Simpan data titipan ini di HP setiap kali dimuat dari server, supaya bisa dibaca saat offline. */
 export function SaveTripOffline({ userId, trip }: { userId: string; trip: OfflineTrip }) {
@@ -20,4 +21,13 @@ export function SaveTripOffline({ userId, trip }: { userId: string; trip: Offlin
       Tersedia offline
     </Badge>
   );
+}
+
+/** Hapus salinan offline titipan di alamat ini, dipakai saat titipannya sudah dihapus. */
+export function ForgetOfflineTrip() {
+  const { id } = useParams<{ id: string }>();
+  useEffect(() => {
+    if (id) removeOfflineTrip(id);
+  }, [id]);
+  return null;
 }
