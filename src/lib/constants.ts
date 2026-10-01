@@ -17,3 +17,5 @@ export const TIME_ZONE = "Asia/Jakarta";
 // saat cookie ini kedaluwarsa
 export const INSTALL_ALERT_COOKIE = "nd_install_dismissed";
 export const INSTALL_ALERT_SNOOZE_DAYS = 7;
+
+export const ADMIN_PASSWORD_MIN_LENGTH = 8;

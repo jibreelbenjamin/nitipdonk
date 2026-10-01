@@ -22,8 +22,10 @@ dari komputer developer, jadi deployment tidak butuh connection string database.
 - **Pembuka titipan** bisa menutup / membuka lagi / menandai selesai, menandai pesanan
   lunas, mengubah harga asli, dan menghapus pesanan.
 - **Pengaturan**: foto profil, info pembayaran (teks dan/atau gambar), pasang/ganti/hapus PIN.
-- **Admin** (`/admin`, dilindungi `ADMIN_PASSWORD`): tambah / ubah nama / reset PIN / nonaktifkan / hapus
-  pengguna, statistik storage, hapus gambar per item atau massal berdasarkan umur.
+- **Admin** (`/admin`, dilindungi password admin di database): tambah / ubah nama / reset PIN / nonaktifkan / hapus
+  pengguna, statistik storage, hapus gambar per item atau massal berdasarkan umur, ganti
+  password admin. Password disimpan sebagai hash scrypt di tabel `Setting`; mengganti password
+  mengeluarkan sesi admin di perangkat lain.
 - **Kompresi gambar**: foto dikecilkan dulu di browser (maks 1600px), lalu server
   mengompres ulang ke WebP dengan `sharp` sebelum masuk storage:
 
@@ -40,7 +42,8 @@ dari komputer developer, jadi deployment tidak butuh connection string database.
 
 ```bash
 npm install
-cp .env.example .env   # isi SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SESSION_SECRET, ADMIN_PASSWORD
+cp .env.example .env   # isi SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SESSION_SECRET
+npm run admin:password # atur password admin (sekali saja; juga dipakai kalau lupa password)
 npm run dev
 ```
 
@@ -74,7 +77,7 @@ anon/publishable key. Server memakai service role key yang melewati RLS.
 1. Import repo ini sebagai project di Vercel (framework Next.js terdeteksi otomatis).
 2. **Settings → Environment Variables** (tipe *Sensitive* untuk yang rahasia):
    - wajib: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SESSION_SECRET`
-     (`openssl rand -base64 32`), `ADMIN_PASSWORD`
+     (`openssl rand -base64 32`)
    - opsional: `CRON_SECRET`, `CLEANUP_PROOF_DAYS`, `SUPABASE_BUCKET`
 3. Deploy. Build hanya menjalankan `next build`; migrasi dijalankan dari komputer developer
    dengan `npm run db:deploy`.

@@ -98,3 +98,10 @@ model Image {
 
   @@index([kind, createdAt])
 }
+
+// Pengaturan aplikasi berbentuk key-value, mis. hash password admin ("adminPasswordHash")
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(3)
+}

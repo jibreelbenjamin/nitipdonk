@@ -3,6 +3,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { hashSecret, verifySecret } from "./hash";
 import { db, must } from "./supabase";
 
 const USER_COOKIE = "nd_user";
@@ -72,25 +73,37 @@ export async function requireUser() {
 }
 
 // ─── Sesi admin ──────────────────────────────────────────────────────────────
-// Token diturunkan dari ADMIN_PASSWORD, jadi mengganti password = semua sesi admin keluar.
+// Password admin disimpan sebagai hash di tabel Setting. Token sesi diturunkan dari hash itu,
+// jadi mengganti password = semua sesi admin lain keluar.
 
-function adminToken() {
-  const password = process.env.ADMIN_PASSWORD;
-  return password ? sign(`admin:${password}`) : null;
+const ADMIN_PASSWORD_KEY = "adminPasswordHash";
+
+async function getAdminPasswordHash() {
+  const row = must(await db().from("Setting").select("value").eq("key", ADMIN_PASSWORD_KEY).maybeSingle());
+  return row?.value ?? null;
 }
 
-export function isAdminConfigured() {
-  return Boolean(process.env.ADMIN_PASSWORD);
+export async function isAdminConfigured() {
+  return Boolean(await getAdminPasswordHash());
 }
 
-export function checkAdminPassword(input: string) {
-  const password = process.env.ADMIN_PASSWORD;
-  // Bandingkan HMAC-nya supaya panjang selalu sama untuk timingSafeEqual
-  return Boolean(password) && safeEqual(sign(input), sign(password!));
+export async function checkAdminPassword(input: string) {
+  const hash = await getAdminPasswordHash();
+  return Boolean(hash) && (await verifySecret(input, hash!));
 }
 
-export async function setAdminSession() {
-  (await cookies()).set(ADMIN_COOKIE, adminToken()!, {
+/** Simpan password admin baru; sesi admin lain otomatis keluar. Mengembalikan hash-nya. */
+export async function setAdminPassword(password: string) {
+  const hash = await hashSecret(password);
+  must(await db().from("Setting").upsert({ key: ADMIN_PASSWORD_KEY, value: hash }));
+  return hash;
+}
+
+/** Tandai perangkat ini sebagai admin. `hash` diisi saat password baru saja diganti. */
+export async function setAdminSession(hash?: string) {
+  const passwordHash = hash ?? (await getAdminPasswordHash());
+  if (!passwordHash) throw new Error("Password admin belum diatur");
+  (await cookies()).set(ADMIN_COOKIE, sign(`admin:${passwordHash}`), {
     ...baseCookie,
     maxAge: 60 * 60 * 24 * 7,
   });
@@ -101,9 +114,10 @@ export async function clearAdminSession() {
 }
 
 export async function isAdmin() {
-  const token = adminToken();
   const raw = (await cookies()).get(ADMIN_COOKIE)?.value;
-  return Boolean(token && raw && safeEqual(raw, token));
+  if (!raw) return false;
+  const hash = await getAdminPasswordHash();
+  return Boolean(hash) && safeEqual(raw, sign(`admin:${hash}`));
 }
 
 export async function requireAdmin() {

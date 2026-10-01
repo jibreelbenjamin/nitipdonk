@@ -21,13 +21,15 @@ export default async function AdminLoginPage() {
           <CardTitle className="text-center font-bold">Dashboard admin</CardTitle>
         </CardHeader>
         <CardContent>
-          {isAdminConfigured() ? (
+          {(await isAdminConfigured()) ? (
             <AdminLoginForm />
           ) : (
             <Alert variant="destructive">
               <TriangleAlertIcon />
-              <AlertTitle>Admin belum dikonfigurasi</AlertTitle>
-              <AlertDescription>Isi ADMIN_PASSWORD di environment lalu restart server.</AlertDescription>
+              <AlertTitle>Password admin belum diatur</AlertTitle>
+              <AlertDescription>
+                Jalankan <code>npm run admin:password</code> dari komputer developer untuk mengaturnya.
+              </AlertDescription>
             </Alert>
           )}
         </CardContent>

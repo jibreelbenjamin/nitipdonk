@@ -142,6 +142,24 @@ export type Database = {
           },
         ]
       }
+      Setting: {
+        Row: {
+          key: string
+          updatedAt: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updatedAt?: string
+          value: string
+        }
+        Update: {
+          key?: string
+          updatedAt?: string
+          value?: string
+        }
+        Relationships: []
+      }
       Trip: {
         Row: {
           closesAt: string | null

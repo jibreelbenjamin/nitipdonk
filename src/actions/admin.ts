@@ -3,7 +3,7 @@
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { ActionError, type ActionResult, getFile, getString, runAction } from "@/lib/action";
-import { PIN_LENGTH } from "@/lib/constants";
+import { ADMIN_PASSWORD_MIN_LENGTH, PIN_LENGTH } from "@/lib/constants";
 import { Constants } from "@/lib/database.types";
 import { cleanupOldImages, deleteImages, saveImage } from "@/lib/images";
 import { hashPin, isValidPin } from "@/lib/pin";
@@ -12,20 +12,41 @@ import {
   clearAdminSession,
   isAdminConfigured,
   requireAdmin,
+  setAdminPassword,
   setAdminSession,
 } from "@/lib/session";
 import { db, must } from "@/lib/supabase";
 
 export async function adminLogin(_prev: ActionResult | null, formData: FormData) {
   const result = await runAction(async () => {
-    if (!isAdminConfigured()) throw new ActionError("ADMIN_PASSWORD belum diset di environment");
-    if (!checkAdminPassword(getString(formData, "password", 200))) {
+    if (!(await isAdminConfigured())) {
+      throw new ActionError("Password admin belum diatur, jalankan npm run admin:password");
+    }
+    if (!(await checkAdminPassword(getString(formData, "password", 200)))) {
       throw new ActionError("Password salah");
     }
     await setAdminSession();
   });
   if (result.ok) redirect("/admin");
   return result;
+}
+
+/** Ganti password admin. Perangkat ini tetap masuk, sesi admin di perangkat lain keluar. */
+export async function changeAdminPassword(_prev: ActionResult | null, formData: FormData) {
+  return runAction(async () => {
+    await requireAdmin();
+    if (!(await checkAdminPassword(getString(formData, "currentPassword", 200)))) {
+      throw new ActionError("Password lama salah");
+    }
+    const password = getString(formData, "password", 200);
+    if (password.length < ADMIN_PASSWORD_MIN_LENGTH) {
+      throw new ActionError(`Password baru minimal ${ADMIN_PASSWORD_MIN_LENGTH} karakter`);
+    }
+    if (password !== getString(formData, "confirmPassword", 200)) {
+      throw new ActionError("Konfirmasi password tidak sama");
+    }
+    await setAdminSession(await setAdminPassword(password));
+  });
 }
 
 export async function adminLogout() {

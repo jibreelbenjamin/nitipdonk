@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ExternalLinkIcon } from "lucide-react";
 import { AdminLogoutButton } from "@/components/admin/admin-logout-button";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { ChangePasswordDialog } from "@/components/admin/change-password-dialog";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 <ExternalLinkIcon />
               </Link>
             </Button>
+            <ChangePasswordDialog />
             <AdminLogoutButton />
           </div>
         </div>
