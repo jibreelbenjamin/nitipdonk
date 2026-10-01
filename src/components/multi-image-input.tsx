@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { ImagePlusIcon, XIcon } from "lucide-react";
+import { CameraIcon, ImagesIcon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { shrinkImage } from "@/lib/client-image";
 import { Button } from "@/components/ui/button";
@@ -11,8 +11,9 @@ import { Spinner } from "@/components/ui/spinner";
 type Picked = { file: File; url: string };
 
 /**
- * Pilih beberapa gambar sekaligus. Tiap foto dikecilkan dulu di browser, lalu semuanya
- * dimasukkan ke input tersembunyi bernama `name` sehingga ikut terkirim lewat FormData.
+ * Pilih beberapa gambar sekaligus dari galeri, atau foto langsung pakai kamera (HP/tablet).
+ * Tiap foto dikecilkan dulu di browser, lalu semuanya dimasukkan ke input tersembunyi
+ * bernama `name` sehingga ikut terkirim lewat FormData.
  */
 export function MultiImageInput({
   id,
@@ -25,7 +26,8 @@ export function MultiImageInput({
   max: number;
   onProcessingChange?: (processing: boolean) => void;
 }) {
-  const pickerRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
   const fieldRef = useRef<HTMLInputElement>(null);
   const [items, setItems] = useState<Picked[]>([]);
   const [processing, setProcessing] = useState(false);
@@ -84,24 +86,54 @@ export function MultiImageInput({
           </Button>
         </div>
       ))}
+      {processing && (
+        <div className="flex size-16 items-center justify-center rounded-lg bg-muted">
+          <Spinner />
+        </div>
+      )}
       {items.length < max && (
-        <Button
-          type="button"
-          variant="outline"
-          className="size-16 flex-col gap-1 text-xs"
-          disabled={processing}
-          onClick={() => pickerRef.current?.click()}
-        >
-          {processing ? <Spinner /> : <ImagePlusIcon />}
-          Tambah
-        </Button>
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            className="size-16 flex-col gap-1 text-xs"
+            disabled={processing}
+            onClick={() => galleryRef.current?.click()}
+          >
+            <ImagesIcon />
+            {/* Di komputer tidak ada pilihan kamera, jadi cukup "Tambah" */}
+            <span className="pointer-coarse:hidden">Tambah</span>
+            <span className="hidden pointer-coarse:inline">Galeri</span>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="hidden size-16 flex-col gap-1 text-xs pointer-coarse:inline-flex"
+            disabled={processing}
+            onClick={() => cameraRef.current?.click()}
+          >
+            <CameraIcon />
+            Kamera
+          </Button>
+        </>
       )}
       <input
-        ref={pickerRef}
+        ref={galleryRef}
         id={id}
         type="file"
         accept="image/*"
         multiple
+        tabIndex={-1}
+        className="sr-only"
+        onChange={handlePick}
+      />
+      {/* `capture` langsung membuka kamera belakang; diabaikan browser komputer */}
+      <input
+        ref={cameraRef}
+        id={`${id}-camera`}
+        type="file"
+        accept="image/*"
+        capture="environment"
         tabIndex={-1}
         className="sr-only"
         onChange={handlePick}

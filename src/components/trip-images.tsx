@@ -62,9 +62,8 @@ export function TripImages({
           {canEdit && <DeleteTripImageButton imageId={image.id} />}
         </div>
       ))}
-      {canEdit && images.length < MAX_TRIP_IMAGES && (
-        <AddTripImagesDialog tripId={tripId} remaining={MAX_TRIP_IMAGES - images.length} />
-      )}
+      {/* Tetap dipasang walau sudah penuh, supaya toast sukses tetap muncul setelah slot terakhir terisi */}
+      {canEdit && <AddTripImagesDialog tripId={tripId} remaining={MAX_TRIP_IMAGES - images.length} />}
     </div>
   );
 }
@@ -79,12 +78,14 @@ function AddTripImagesDialog({ tripId, remaining }: { tripId: string; remaining:
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="size-20 flex-col gap-1 text-xs leading-tight whitespace-normal">
-          <ImagePlusIcon />
-          Tambah gambar
-        </Button>
-      </DialogTrigger>
+      {remaining > 0 && (
+        <DialogTrigger asChild>
+          <Button variant="outline" className="size-20 flex-col gap-1 text-xs leading-tight whitespace-normal">
+            <ImagePlusIcon />
+            Tambah gambar
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-sm">
         <form onSubmit={onSubmit} className="flex flex-col gap-6">
           <fieldset disabled={pending} className="contents">
