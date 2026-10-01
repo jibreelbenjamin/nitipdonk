@@ -41,7 +41,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <TooltipProvider>
             <NavigationShell>{children}</NavigationShell>
           </TooltipProvider>
-          <Toaster position="top-center" richColors />
+          <Toaster position="top-center" />
           <ServiceWorkerRegistration />
         </ThemeProvider>
       </body>
