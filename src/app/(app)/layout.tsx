@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { InstallAppAlert } from "@/components/install-app-alert";
 import { InstallAppButton } from "@/components/install-app-button";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -22,7 +23,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
         </div>
       </header>
-      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-6">{children}</main>
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-6">
+        <InstallAppAlert className="mb-6" />
+        {children}
+      </main>
     </>
   );
 }

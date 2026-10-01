@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ShieldIcon, UsersIcon } from "lucide-react";
+import { InstallAppAlert } from "@/components/install-app-alert";
 import { InstallAppButton } from "@/components/install-app-button";
 import { Logo } from "@/components/logo";
 import { ProfilePicker } from "@/components/profile-picker";
@@ -33,6 +34,7 @@ export default async function HomePage() {
         <InstallAppButton />
         <ThemeToggle />
       </div>
+      <InstallAppAlert />
       <div className="flex flex-col items-center gap-3 text-center">
         <Logo />
         <h1 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl">

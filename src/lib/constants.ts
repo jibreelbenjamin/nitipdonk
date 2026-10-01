@@ -12,3 +12,8 @@ export const LIVE_WINDOW_HOURS = 24;
 export const MAX_CLOSE_MINUTES = 24 * 60;
 
 export const TIME_ZONE = "Asia/Jakarta";
+
+// Saran unduh aplikasi di browser Android: setelah "Nanti saja", baru muncul lagi
+// saat cookie ini kedaluwarsa
+export const INSTALL_ALERT_COOKIE = "nd_install_dismissed";
+export const INSTALL_ALERT_SNOOZE_DAYS = 7;

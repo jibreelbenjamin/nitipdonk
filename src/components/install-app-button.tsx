@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useSyncExternalStore } from "react";
-import { DownloadIcon } from "lucide-react";
+import { DownloadIcon, SmartphoneIcon } from "lucide-react";
 import { toast } from "sonner";
+import { INSTALL_ALERT_COOKIE, INSTALL_ALERT_SNOOZE_DAYS } from "@/lib/constants";
+import { cn } from "@/lib/utils";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -57,9 +60,53 @@ function subscribe(listener: () => void) {
 /** Tombol pasang aplikasi, khusus HP Android yang belum membuka NitipDonk sebagai aplikasi. */
 export function InstallAppButton() {
   const mode = useSyncExternalStore(subscribe, getMode, (): Mode => "hidden");
-  const [helpOpen, setHelpOpen] = useState(false);
-
   if (mode === "hidden") return null;
+  return (
+    <InstallTrigger variant="outline" size="sm">
+      Unduh
+    </InstallTrigger>
+  );
+}
+
+/**
+ * Saran unduh aplikasi daripada pakai web. Server hanya merendernya untuk browser Android
+ * (lihat `InstallAppAlert`); kalau sudah dibuka sebagai aplikasi, CSS menyembunyikannya sejak awal.
+ */
+export function InstallAppAlertClient({ className }: { className?: string }) {
+  const justInstalled = useSyncExternalStore(subscribe, () => installed, () => false);
+  const [dismissed, setDismissed] = useState(false);
+  if (justInstalled || dismissed) return null;
+
+  function dismiss() {
+    // Server tidak merender saran ini lagi sampai cookie-nya kedaluwarsa
+    const maxAge = INSTALL_ALERT_SNOOZE_DAYS * 24 * 60 * 60;
+    document.cookie = `${INSTALL_ALERT_COOKIE}=1; path=/; max-age=${maxAge}; samesite=lax`;
+    setDismissed(true);
+  }
+
+  return (
+    <Alert className={cn("[@media(display-mode:standalone)]:hidden", className)}>
+      <SmartphoneIcon />
+      <AlertTitle>Lebih enak pakai aplikasinya</AlertTitle>
+      <AlertDescription className="flex flex-col items-start gap-3">
+        <span>
+          Daripada buka lewat browser, unduh NitipDonk ke HP-mu supaya bisa dibuka langsung dari layar
+          utama dan tampil layar penuh.
+        </span>
+        <div className="flex flex-wrap gap-2">
+          <InstallTrigger size="sm">Unduh aplikasi</InstallTrigger>
+          <Button variant="ghost" size="sm" onClick={dismiss}>
+            Nanti saja
+          </Button>
+        </div>
+      </AlertDescription>
+    </Alert>
+  );
+}
+
+/** Munculkan dialog pasang dari Chrome, atau petunjuk pasang manual kalau dialog itu belum tersedia. */
+function InstallTrigger({ children, ...props }: React.ComponentProps<typeof Button>) {
+  const [helpOpen, setHelpOpen] = useState(false);
 
   async function install() {
     const promptEvent = deferredPrompt;
@@ -77,9 +124,9 @@ export function InstallAppButton() {
 
   return (
     <>
-      <Button variant="outline" size="sm" onClick={install}>
+      <Button {...props} onClick={install}>
         <DownloadIcon data-icon="inline-start" />
-        Unduh
+        {children}
       </Button>
       <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
         <DialogContent className="sm:max-w-sm">
