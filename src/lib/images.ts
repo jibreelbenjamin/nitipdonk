@@ -4,7 +4,7 @@ import sharp from "sharp";
 import { ActionError } from "./action";
 import { MAX_UPLOAD_MB } from "./constants";
 import { Constants, type Enums } from "./database.types";
-import { publicUrl, putObject, removeObjects } from "./storage";
+import { putObject, removeObjects } from "./storage";
 import { db, must } from "./supabase";
 
 type ImageKind = Enums<"ImageKind">;
@@ -14,9 +14,10 @@ const PRESETS: Record<ImageKind, { size: number; fit: "cover" | "inside"; qualit
   AVATAR: { size: 256, fit: "cover", quality: 80 },
   PAYMENT_QR: { size: 1080, fit: "inside", quality: 90 }, // QR harus tetap bisa di-scan
   PROOF: { size: 1280, fit: "inside", quality: 70 },
+  TRIP: { size: 1600, fit: "inside", quality: 80 }, // foto menu: tulisan kecil harus tetap terbaca
 };
 
-export async function saveImage(file: File, kind: ImageKind) {
+export async function saveImage(file: File, kind: ImageKind, link: { tripId?: string } = {}) {
   if (!file.type.startsWith("image/")) throw new ActionError("File harus berupa gambar");
   if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
     throw new ActionError(`Ukuran gambar maksimal ${MAX_UPLOAD_MB} MB`);
@@ -46,6 +47,7 @@ export async function saveImage(file: File, kind: ImageKind) {
       .insert({
         kind,
         path,
+        tripId: link.tripId ?? null,
         size: output.info.size,
         width: output.info.width,
         height: output.info.height,
@@ -113,6 +115,7 @@ export async function imageStats() {
   return stats;
 }
 
+/** Alamat gambar lewat domain aplikasi sendiri (route /img), bukan URL storage Supabase. */
 export function imageUrl(image: { path: string } | null | undefined) {
-  return image ? publicUrl(image.path) : undefined;
+  return image ? `/img/${image.path}` : undefined;
 }

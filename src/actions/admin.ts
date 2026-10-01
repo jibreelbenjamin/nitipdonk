@@ -160,10 +160,15 @@ export async function deleteUser(userId: string) {
         .select("proofId, trip:Trip!Order_tripId_fkey!inner(hostId)")
         .eq("trip.hostId", user.id),
     );
+    // Lampiran gambar di titipan yang dia buka
+    const tripImages = must(
+      await db().from("Image").select("id, trip:Trip!Image_tripId_fkey!inner(hostId)").eq("trip.hostId", user.id),
+    );
     await deleteImages([
       user.avatarId,
       user.paymentQrId,
       ...[...ownOrders, ...hostedOrders].map((order) => order.proofId),
+      ...tripImages.map((image) => image.id),
     ]);
     // Titipan & pesanannya ikut terhapus lewat ON DELETE CASCADE
     must(await db().from("User").delete().eq("id", user.id));

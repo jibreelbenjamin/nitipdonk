@@ -8,6 +8,9 @@ export const MAX_UPLOAD_MB = 8;
 // Titipan yang belum ditandai selesai tetap muncul di "Live" selama ini
 export const LIVE_WINDOW_HOURS = 24;
 
+// Lampiran gambar dari pembuka titipan (foto menu, syarat, dll.)
+export const MAX_TRIP_IMAGES = 5;
+
 // Batas "tutup dalam N menit" saat membuka titipan
 export const MAX_CLOSE_MINUTES = 24 * 60;
 

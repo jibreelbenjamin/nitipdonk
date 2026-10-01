@@ -26,6 +26,7 @@ const KIND_OPTIONS = [
   { value: "PROOF", label: "Bukti pembayaran" },
   { value: "PAYMENT_QR", label: "QR pembayaran" },
   { value: "AVATAR", label: "Foto profil" },
+  { value: "TRIP", label: "Lampiran titipan" },
   { value: "ALL", label: "Semua jenis" },
 ] as const;
 

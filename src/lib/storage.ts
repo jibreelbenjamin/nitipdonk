@@ -38,6 +38,8 @@ export async function removeObjects(keys: string[]) {
   }
 }
 
-export function publicUrl(key: string) {
-  return db().storage.from(BUCKET).getPublicUrl(key).data.publicUrl;
+/** Ambil isi file dari storage di server (dipakai /img supaya URL Supabase tidak terlihat). */
+export async function getObject(key: string) {
+  const { data, error } = await db().storage.from(BUCKET).download(key);
+  return error ? null : data;
 }

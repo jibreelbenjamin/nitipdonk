@@ -8,6 +8,7 @@ enum ImageKind {
   AVATAR // foto profil
   PAYMENT_QR // gambar info pembayaran (QRIS, dsb.)
   PROOF // bukti pembayaran titipan
+  TRIP // lampiran dari pembuka titipan (foto menu, daftar harga, syarat, dll.)
 }
 
 enum PaymentMethod {
@@ -58,6 +59,7 @@ model Trip {
   updatedAt DateTime   @default(now()) @updatedAt @db.Timestamptz(3)
 
   orders Order[]
+  images Image[]
 
   @@index([status, createdAt])
 }
@@ -91,12 +93,17 @@ model Image {
   width     Int
   height    Int
   createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  // Lampiran titipan. SetNull: kalau titipan terhapus tanpa membersihkan gambarnya, barisnya
+  // tetap terlihat di admin ("Tidak terpakai") sehingga file di storage bisa dihapus
+  tripId    String?
+  trip      Trip?     @relation(fields: [tripId], references: [id], onDelete: SetNull)
 
   avatarOf    User?  @relation("UserAvatar")
   paymentQrOf User?  @relation("UserPaymentQr")
   proofOf     Order?
 
   @@index([kind, createdAt])
+  @@index([tripId])
 }
 
 // Pengaturan aplikasi berbentuk key-value, mis. hash password admin ("adminPasswordHash")

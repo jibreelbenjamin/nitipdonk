@@ -1,20 +1,19 @@
 "use client";
 
 import Image from "next/image";
-import { ExternalLinkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ZoomableImage } from "@/components/zoomable-image";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-/** Thumbnail yang bisa diklik untuk melihat gambar ukuran penuh. */
+/** Thumbnail yang bisa diklik untuk melihat gambar ukuran penuh, bisa diperbesar. */
 export function ImagePreview({
   src,
   alt,
@@ -45,27 +44,12 @@ export function ImagePreview({
           <Image src={src} alt={alt} fill unoptimized className="object-cover" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
-        <Image
-          src={src}
-          alt={alt}
-          width={width}
-          height={height}
-          unoptimized
-          className="max-h-[70vh] w-full rounded-lg object-contain"
-        />
-        <DialogFooter>
-          <Button variant="outline" asChild>
-            <a href={src} target="_blank" rel="noreferrer">
-              <ExternalLinkIcon data-icon="inline-start" />
-              Buka di tab baru
-            </a>
-          </Button>
-        </DialogFooter>
+        <ZoomableImage src={src} alt={alt} width={width} height={height} />
       </DialogContent>
     </Dialog>
   );

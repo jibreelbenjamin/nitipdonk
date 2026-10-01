@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { PlusIcon } from "lucide-react";
 import { createTrip } from "@/actions/trips";
 import { useFormAction } from "@/hooks/use-action-feedback";
-import { MAX_CLOSE_MINUTES } from "@/lib/constants";
+import { MAX_CLOSE_MINUTES, MAX_TRIP_IMAGES } from "@/lib/constants";
+import { MultiImageInput } from "@/components/multi-image-input";
 import { SubmitButton } from "@/components/submit-button";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 export function CreateTripDialog() {
   const { pending, onSubmit } = useFormAction(createTrip, { navigates: true });
+  const [processing, setProcessing] = useState(false);
 
   return (
     <Dialog>
@@ -74,6 +77,18 @@ export function CreateTripDialog() {
                 </InputGroup>
                 <FieldDescription>Opsional. Setelah itu orang tidak bisa titip lagi.</FieldDescription>
               </Field>
+              <Field>
+                <FieldLabel htmlFor="trip-images">Gambar</FieldLabel>
+                <MultiImageInput
+                  id="trip-images"
+                  name="images"
+                  max={MAX_TRIP_IMAGES}
+                  onProcessingChange={setProcessing}
+                />
+                <FieldDescription>
+                  Opsional, maksimal {MAX_TRIP_IMAGES}. Misalnya foto menu, daftar harga, atau syarat titip.
+                </FieldDescription>
+              </Field>
             </FieldGroup>
             <DialogFooter>
               <DialogClose asChild>
@@ -81,7 +96,9 @@ export function CreateTripDialog() {
                   Batal
                 </Button>
               </DialogClose>
-              <SubmitButton pending={pending}>Buka titipan</SubmitButton>
+              <SubmitButton pending={pending} disabled={processing}>
+                Buka titipan
+              </SubmitButton>
             </DialogFooter>
           </FieldSet>
         </form>

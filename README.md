@@ -16,6 +16,9 @@ dari komputer developer, jadi deployment tidak butuh connection string database.
 - **Pilih akun** seperti profil Netflix. Akun terbuka tanpa password; PIN 6 digit opsional
   (dikunci 5 menit setelah 5x salah). Ganti PIN = sesi di perangkat lain otomatis keluar.
 - **Titipan live**: daftar titipan yang sedang buka, auto-refresh tiap 10 detik, tab Riwayat.
+- **Lampiran gambar**: pembuka titipan bisa melampirkan sampai 5 gambar (foto menu, daftar
+  harga, syarat) saat membuka titipan, lalu menambah/menghapusnya. Semua gambar bisa
+  diperbesar: cubit & geser di HP, scroll / klik dua kali / tombol di komputer.
 - **Detail titipan**: info pembayaran pembuka titipan (teks + gambar QRIS, tombol salin),
   form titip (pesanan, harga, radio cash/cashless, upload bukti bayar), daftar pesanan
   dengan total, jumlah cash/cashless, dan status lunas.
@@ -34,6 +37,7 @@ dari komputer developer, jadi deployment tidak butuh connection string database.
   | Foto profil  | 256×256 (crop)  | 80       |
   | QR pembayaran| 1080px          | 90       |
   | Bukti bayar  | 1280px          | 70       |
+  | Lampiran     | 1600px          | 80       |
 
 - **Pembersihan berkala**: `GET /api/cron/cleanup` menghapus bukti bayar yang lebih tua dari
   `CLEANUP_PROOF_DAYS` hari. `vercel.json` menjadwalkannya tiap hari 03:00 WIB.
@@ -89,8 +93,10 @@ deploy di tempat lain, panggil endpoint cron dari penjadwal apa pun dengan heade
 
 - Ini aplikasi **internal**: siapa pun yang bisa membuka URL bisa memilih akun tanpa PIN.
   Taruh di balik jaringan kantor / proteksi deployment kalau perlu.
-- URL gambar di bucket public tidak bisa ditebak (UUID), tapi siapa pun yang punya URL-nya
-  bisa melihat gambarnya.
+- Gambar disajikan lewat `/img/...` di domain aplikasi, jadi URL Supabase tidak terlihat di
+  browser. Foto profil terbuka (tampil di halaman pilih akun); bukti bayar, QR, dan lampiran
+  hanya untuk yang sudah login atau admin. Bucket storage-nya sendiri masih public, jadi URL
+  Supabase lama (kalau pernah tersalin) tetap bisa dibuka.
 - Semua server action memverifikasi sesi dan kepemilikan (pemesan vs pembuka titipan vs admin).
 
 ## Struktur

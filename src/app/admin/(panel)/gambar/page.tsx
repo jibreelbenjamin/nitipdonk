@@ -18,6 +18,7 @@ const KIND_LABEL: Record<ImageKind, string> = {
   PROOF: "Bukti bayar",
   PAYMENT_QR: "QR pembayaran",
   AVATAR: "Foto profil",
+  TRIP: "Lampiran titipan",
 };
 
 const PAGE_SIZE = 60;
@@ -32,7 +33,8 @@ export default async function AdminImagesPage({ searchParams }: PageProps<"/admi
       `*,
       avatarOf:User!User_avatarId_fkey(name),
       paymentQrOf:User!User_paymentQrId_fkey(name),
-      proofOf:Order!Order_proofId_fkey(user:User!Order_userId_fkey(name), trip:Trip!Order_tripId_fkey(title))`,
+      proofOf:Order!Order_proofId_fkey(user:User!Order_userId_fkey(name), trip:Trip!Order_tripId_fkey(title)),
+      trip:Trip!Image_tripId_fkey(title)`,
     );
   const [stats, imagesResult] = await Promise.all([
     imageStats(),
@@ -48,7 +50,7 @@ export default async function AdminImagesPage({ searchParams }: PageProps<"/admi
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         <StatCard label="Total" count={totalCount} bytes={totalBytes} />
         {IMAGE_KINDS.map((value) => (
           <StatCard
@@ -106,7 +108,7 @@ export default async function AdminImagesPage({ searchParams }: PageProps<"/admi
               const owner =
                 one(image.avatarOf)?.name ??
                 one(image.paymentQrOf)?.name ??
-                (proof ? `${proof.user.name} · ${proof.trip.title}` : "Tidak terpakai");
+                (proof ? `${proof.user.name} · ${proof.trip.title}` : (image.trip?.title ?? "Tidak terpakai"));
               return (
                 <Card key={image.id} size="sm" className="pt-0">
                   <ImagePreview

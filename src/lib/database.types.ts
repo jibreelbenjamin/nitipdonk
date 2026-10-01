@@ -59,6 +59,7 @@ export type Database = {
           kind: Database["public"]["Enums"]["ImageKind"]
           path: string
           size: number
+          tripId: string | null
           width: number
         }
         Insert: {
@@ -68,6 +69,7 @@ export type Database = {
           kind: Database["public"]["Enums"]["ImageKind"]
           path: string
           size: number
+          tripId?: string | null
           width: number
         }
         Update: {
@@ -77,9 +79,18 @@ export type Database = {
           kind?: Database["public"]["Enums"]["ImageKind"]
           path?: string
           size?: number
+          tripId?: string | null
           width?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "Image_tripId_fkey"
+            columns: ["tripId"]
+            isOneToOne: false
+            referencedRelation: "Trip"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       Order: {
         Row: {
@@ -269,7 +280,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      ImageKind: "AVATAR" | "PAYMENT_QR" | "PROOF"
+      ImageKind: "AVATAR" | "PAYMENT_QR" | "PROOF" | "TRIP"
       PaymentMethod: "CASH" | "CASHLESS"
       TripStatus: "OPEN" | "CLOSED" | "DONE"
     }
@@ -399,7 +410,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      ImageKind: ["AVATAR", "PAYMENT_QR", "PROOF"],
+      ImageKind: ["AVATAR", "PAYMENT_QR", "PROOF", "TRIP"],
       PaymentMethod: ["CASH", "CASHLESS"],
       TripStatus: ["OPEN", "CLOSED", "DONE"],
     },

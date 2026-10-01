@@ -29,6 +29,10 @@ export function getFile(formData: FormData, name: string): File | null {
   return value instanceof File && value.size > 0 ? value : null;
 }
 
+export function getFiles(formData: FormData, name: string): File[] {
+  return formData.getAll(name).filter((value): value is File => value instanceof File && value.size > 0);
+}
+
 /** Harga opsional dalam rupiah; menerima "15000", "15.000", atau "Rp 15.000". */
 export function getPrice(formData: FormData, name: string): number | null {
   const digits = getString(formData, name, 20).replace(/\D/g, "");

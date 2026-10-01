@@ -19,6 +19,7 @@ import { OrdersSummary } from "@/components/orders-summary";
 import { PaidToggle } from "@/components/paid-toggle";
 import { SaveTripOffline } from "@/components/save-trip-offline";
 import { TripHostActions } from "@/components/trip-host-actions";
+import { TripImages } from "@/components/trip-images";
 import { TripStatusBadge } from "@/components/trip-status-badge";
 import { UserAvatar } from "@/components/user-avatar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -50,10 +51,12 @@ export default async function TripPage({ params }: PageProps<"/titipan/[id]">) {
       .select(
         `*,
         host:User!Trip_hostId_fkey(id, name, paymentInfo, avatar:Image!User_avatarId_fkey(*), paymentQr:Image!User_paymentQrId_fkey(*)),
-        orders:Order(*, user:User!Order_userId_fkey(id, name, avatar:Image!User_avatarId_fkey(*)), proof:Image!Order_proofId_fkey(*))`,
+        orders:Order(*, user:User!Order_userId_fkey(id, name, avatar:Image!User_avatarId_fkey(*)), proof:Image!Order_proofId_fkey(*)),
+        images:Image!Image_tripId_fkey(id, path, width, height, createdAt)`,
       )
       .eq("id", id)
       .order("createdAt", { referencedTable: "orders" })
+      .order("createdAt", { referencedTable: "images" })
       .maybeSingle(),
   );
   if (!trip) notFound();
@@ -109,6 +112,21 @@ export default async function TripPage({ params }: PageProps<"/titipan/[id]">) {
           <CardTitle className="pt-1 text-xl">{trip.title}</CardTitle>
           {trip.note && <CardDescription className="whitespace-pre-wrap">{trip.note}</CardDescription>}
         </CardHeader>
+        {(trip.images.length > 0 || isHost) && (
+          <CardContent>
+            <TripImages
+              tripId={trip.id}
+              title={trip.title}
+              images={trip.images.map((image) => ({
+                id: image.id,
+                url: imageUrl(image)!,
+                width: image.width,
+                height: image.height,
+              }))}
+              canEdit={isHost}
+            />
+          </CardContent>
+        )}
         <CardContent className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-1.5">
             <TripStatusBadge trip={trip} />
