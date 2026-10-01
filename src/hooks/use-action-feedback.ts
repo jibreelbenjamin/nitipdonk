@@ -1,8 +1,9 @@
 "use client";
 
-import { startTransition, useActionState, useEffect, useRef, useTransition } from "react";
+import { startTransition, useActionState, useCallback, useEffect, useRef, useTransition } from "react";
 import { toast } from "sonner";
 import { finishNavigation, startNavigation } from "@/lib/navigation-progress";
+import { offlineSafe } from "@/lib/offline";
 
 type Result = { ok: true; message?: string } | { ok: false; error: string };
 
@@ -42,7 +43,12 @@ export function useFormAction<S extends Result>(
   action: (prev: S | null, formData: FormData) => Promise<S>,
   options: FeedbackOptions<S> = {},
 ) {
-  const [state, dispatch, pending] = useActionState(action, null);
+  // Saat offline, gagal kirim jadi pesan biasa, bukan halaman error
+  const safeAction = useCallback(
+    (prev: S | null, formData: FormData) => offlineSafe(action(prev, formData)) as Promise<S>,
+    [action],
+  );
+  const [state, dispatch, pending] = useActionState(safeAction, null);
   useActionFeedback(state, options);
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -66,7 +72,7 @@ export function useActionRunner() {
 
   function run(action: () => Promise<Result>, success?: string, onSuccess?: () => void) {
     startActionTransition(async () => {
-      const result = await action();
+      const result = await offlineSafe(action());
       // Action yang redirect tidak mengembalikan hasil
       if (!result) return;
       if (!result.ok) {
