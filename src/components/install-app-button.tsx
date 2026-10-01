@@ -4,6 +4,7 @@ import { useState, useSyncExternalStore } from "react";
 import { DownloadIcon, SmartphoneIcon } from "lucide-react";
 import { toast } from "sonner";
 import { INSTALL_ALERT_COOKIE, INSTALL_ALERT_SNOOZE_DAYS } from "@/lib/constants";
+import { INSTALL_PROMPT_KEY } from "@/lib/install-prompt";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Spinner } from "@/components/ui/spinner";
 
 // Belum ada di lib.dom: event Chrome/Edge (HP & komputer) saat aplikasi siap dipasang
 type BeforeInstallPromptEvent = Event & {
@@ -29,7 +31,11 @@ let installed = false;
 const listeners = new Set<() => void>();
 const notify = () => listeners.forEach((listener) => listener());
 
+type InstallPromptWindow = Window & { [INSTALL_PROMPT_KEY]?: BeforeInstallPromptEvent };
+
 if (typeof window !== "undefined") {
+  // Event yang sudah ditangkap skrip di <head> sebelum modul ini dimuat
+  deferredPrompt = (window as InstallPromptWindow)[INSTALL_PROMPT_KEY] ?? null;
   window.addEventListener("beforeinstallprompt", (event) => {
     // Pakai tombol "Unduh" sendiri, bukan banner bawaan Chrome
     event.preventDefault();
@@ -43,15 +49,28 @@ if (typeof window !== "undefined") {
   });
 }
 
-type Mode = "hidden" | "prompt" | "manual";
-
-function getMode(): Mode {
-  const isStandalone =
+/** Sedang dibuka sebagai aplikasi yang sudah terpasang, bukan lewat browser. */
+function isStandalone() {
+  return (
     window.matchMedia("(display-mode: standalone)").matches ||
     // Safari iOS lama hanya mengenal penanda ini untuk aplikasi di layar utama
-    (navigator as Navigator & { standalone?: boolean }).standalone === true;
-  if (isStandalone || installed) return "hidden";
-  return deferredPrompt ? "prompt" : "manual";
+    (navigator as Navigator & { standalone?: boolean }).standalone === true
+  );
+}
+
+/** Tunggu event pasang dari Chrome/Edge paling lama `timeout` ms. */
+function waitForPrompt(timeout: number) {
+  return new Promise<BeforeInstallPromptEvent | null>((resolve) => {
+    if (deferredPrompt) return resolve(deferredPrompt);
+    const done = () => {
+      clearTimeout(timer);
+      listeners.delete(check);
+      resolve(deferredPrompt);
+    };
+    const check = () => deferredPrompt && done();
+    const timer = setTimeout(done, timeout);
+    listeners.add(check);
+  });
 }
 
 type Platform = "android" | "ios" | "mac-safari" | "firefox" | "desktop";
@@ -124,12 +143,15 @@ function subscribe(listener: () => void) {
   return () => listeners.delete(listener);
 }
 
-/** Tombol pasang aplikasi, di semua perangkat yang belum membuka NitipDonk sebagai aplikasi. */
+/**
+ * Tombol pasang aplikasi. Selalu tampil di browser (sudah ada sejak dirender server), hanya
+ * disembunyikan saat NitipDonk sudah dibuka sebagai aplikasi.
+ */
 export function InstallAppButton() {
-  const mode = useSyncExternalStore(subscribe, getMode, (): Mode => "hidden");
-  if (mode === "hidden") return null;
+  const inApp = useSyncExternalStore(subscribe, isStandalone, () => false);
+  if (inApp) return null;
   return (
-    <InstallTrigger variant="outline" size="sm">
+    <InstallTrigger variant="outline" size="sm" className="[@media(display-mode:standalone)]:hidden">
       Unduh
     </InstallTrigger>
   );
@@ -140,7 +162,7 @@ export function InstallAppButton() {
  * (lihat `InstallAppAlert`); kalau sudah dibuka sebagai aplikasi, CSS menyembunyikannya sejak awal.
  */
 export function InstallAppAlertClient({ className }: { className?: string }) {
-  const hidden = useSyncExternalStore(subscribe, () => getMode() === "hidden", () => false);
+  const hidden = useSyncExternalStore(subscribe, () => installed || isStandalone(), () => false);
   const [dismissed, setDismissed] = useState(false);
   if (hidden || dismissed) return null;
 
@@ -171,22 +193,39 @@ export function InstallAppAlertClient({ className }: { className?: string }) {
   );
 }
 
-/** Munculkan dialog pasang dari Chrome/Edge, atau petunjuk pasang manual sesuai perangkat. */
-function InstallTrigger({ children, ...props }: React.ComponentProps<typeof Button>) {
+/**
+ * Langsung membuka dialog pasang bawaan Chrome/Edge. Browser yang tidak menyediakannya untuk
+ * situs web (Safari, Firefox) mendapat petunjuk pasang manual sesuai perangkat.
+ */
+function InstallTrigger({ children, disabled, ...props }: React.ComponentProps<typeof Button>) {
   const [helpOpen, setHelpOpen] = useState(false);
+  const [waiting, setWaiting] = useState(false);
   // Dideteksi saat diklik karena tombol ini ikut dirender di server
   const [platform, setPlatform] = useState<Platform | null>(null);
   const guide = platform && GUIDES[platform];
 
   async function install() {
-    const promptEvent = deferredPrompt;
+    const current = detectPlatform();
+    if (installed) {
+      toast.info(`NitipDonk sudah terpasang. Buka dari ${GUIDES[current].openFrom}.`);
+      return;
+    }
+    let promptEvent = deferredPrompt;
+    // Chrome/Edge kadang baru siap beberapa detik setelah halaman dimuat. Tunggu sebentar,
+    // masih dalam batas waktu klik, supaya dialog pasangnya tetap bisa langsung muncul.
+    if (!promptEvent && "onbeforeinstallprompt" in window) {
+      setWaiting(true);
+      promptEvent = await waitForPrompt(3000);
+      setWaiting(false);
+    }
     if (!promptEvent) {
-      setPlatform(detectPlatform());
+      setPlatform(current);
       setHelpOpen(true);
       return;
     }
     // prompt() hanya bisa dipanggil sekali per event
     deferredPrompt = null;
+    delete (window as InstallPromptWindow)[INSTALL_PROMPT_KEY];
     notify();
     await promptEvent.prompt();
     const { outcome } = await promptEvent.userChoice;
@@ -195,8 +234,8 @@ function InstallTrigger({ children, ...props }: React.ComponentProps<typeof Butt
 
   return (
     <>
-      <Button {...props} onClick={install}>
-        <DownloadIcon data-icon="inline-start" />
+      <Button {...props} disabled={disabled || waiting} onClick={install}>
+        {waiting ? <Spinner data-icon="inline-start" /> : <DownloadIcon data-icon="inline-start" />}
         {children}
       </Button>
       <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
