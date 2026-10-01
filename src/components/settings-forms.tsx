@@ -30,7 +30,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -45,31 +45,33 @@ export function ProfileForm({ name, avatarUrl }: { name: string; avatarUrl?: str
         <CardDescription>Foto profil otomatis dipotong persegi & dikompres.</CardDescription>
       </CardHeader>
       <form onSubmit={onSubmit} className="contents">
-        <CardContent>
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="profile-avatar">Foto profil</FieldLabel>
-              <ImageInput
-                key={avatarUrl}
-                id="profile-avatar"
-                name="avatar"
-                currentUrl={avatarUrl}
-                removeName="removeAvatar"
-                shape="circle"
-                onProcessingChange={setProcessing}
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="profile-name">Nama</FieldLabel>
-              <Input id="profile-name" name="name" defaultValue={name} maxLength={40} required />
-            </Field>
-          </FieldGroup>
-        </CardContent>
-        <CardFooter className="justify-end">
-          <SubmitButton pending={pending} disabled={processing}>
-            Simpan profil
-          </SubmitButton>
-        </CardFooter>
+        <FieldSet disabled={pending} className="contents">
+          <CardContent>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="profile-avatar">Foto profil</FieldLabel>
+                <ImageInput
+                  key={avatarUrl}
+                  id="profile-avatar"
+                  name="avatar"
+                  currentUrl={avatarUrl}
+                  removeName="removeAvatar"
+                  shape="circle"
+                  onProcessingChange={setProcessing}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="profile-name">Nama</FieldLabel>
+                <Input id="profile-name" name="name" defaultValue={name} maxLength={40} required />
+              </Field>
+            </FieldGroup>
+          </CardContent>
+          <CardFooter className="justify-end">
+            <SubmitButton pending={pending} disabled={processing}>
+              Simpan profil
+            </SubmitButton>
+          </CardFooter>
+        </FieldSet>
       </form>
     </Card>
   );
@@ -88,38 +90,40 @@ export function PaymentForm({ paymentInfo, qrUrl }: { paymentInfo?: string; qrUr
         </CardDescription>
       </CardHeader>
       <form onSubmit={onSubmit} className="contents">
-        <CardContent>
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="payment-info">Teks</FieldLabel>
-              <Textarea
-                id="payment-info"
-                name="paymentInfo"
-                defaultValue={paymentInfo}
-                placeholder={"BCA 1234567890 a.n. Budi\nGoPay / DANA 0812-3456-7890"}
-                maxLength={300}
-                rows={3}
-              />
-              <FieldDescription>Nomor rekening, e-wallet, atau catatan lain.</FieldDescription>
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="payment-qr">Gambar (QRIS)</FieldLabel>
-              <ImageInput
-                key={qrUrl}
-                id="payment-qr"
-                name="paymentQr"
-                currentUrl={qrUrl}
-                removeName="removePaymentQr"
-                onProcessingChange={setProcessing}
-              />
-            </Field>
-          </FieldGroup>
-        </CardContent>
-        <CardFooter className="justify-end">
-          <SubmitButton pending={pending} disabled={processing}>
-            Simpan pembayaran
-          </SubmitButton>
-        </CardFooter>
+        <FieldSet disabled={pending} className="contents">
+          <CardContent>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="payment-info">Teks</FieldLabel>
+                <Textarea
+                  id="payment-info"
+                  name="paymentInfo"
+                  defaultValue={paymentInfo}
+                  placeholder={"BCA 1234567890 a.n. Budi\nGoPay / DANA 0812-3456-7890"}
+                  maxLength={300}
+                  rows={3}
+                />
+                <FieldDescription>Nomor rekening, e-wallet, atau catatan lain.</FieldDescription>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="payment-qr">Gambar (QRIS)</FieldLabel>
+                <ImageInput
+                  key={qrUrl}
+                  id="payment-qr"
+                  name="paymentQr"
+                  currentUrl={qrUrl}
+                  removeName="removePaymentQr"
+                  onProcessingChange={setProcessing}
+                />
+              </Field>
+            </FieldGroup>
+          </CardContent>
+          <CardFooter className="justify-end">
+            <SubmitButton pending={pending} disabled={processing}>
+              Simpan pembayaran
+            </SubmitButton>
+          </CardFooter>
+        </FieldSet>
       </form>
     </Card>
   );
@@ -155,34 +159,36 @@ export function PinSettings({ hasPin }: { hasPin: boolean }) {
       </CardHeader>
       <CardContent>
         <form key={formKey} id="pin-form" onSubmit={onSubmit}>
-          <FieldGroup>
-            {!hasPin && (
-              <Alert>
-                <ShieldCheckIcon />
-                <AlertTitle>Akunmu masih terbuka</AlertTitle>
-                <AlertDescription>
-                  Siapa pun yang membuka aplikasi bisa masuk sebagai kamu. Pasang PIN kalau mau lebih aman.
-                </AlertDescription>
-              </Alert>
-            )}
-            {hasPin && (
-              <Field>
-                <FieldLabel htmlFor="pin-current">PIN lama</FieldLabel>
-                <PinInput id="pin-current" name="currentPin" />
-              </Field>
-            )}
-            <Field>
-              <FieldLabel htmlFor="pin-new">PIN baru</FieldLabel>
-              <PinInput id="pin-new" name="pin" />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="pin-confirm">Ulangi PIN baru</FieldLabel>
-              <PinInput id="pin-confirm" name="confirmPin" />
-              {hasPin && (
-                <FieldDescription>Mengganti PIN akan mengeluarkan akunmu dari perangkat lain.</FieldDescription>
+          <FieldSet disabled={pending} className="contents">
+            <FieldGroup>
+              {!hasPin && (
+                <Alert>
+                  <ShieldCheckIcon />
+                  <AlertTitle>Akunmu masih terbuka</AlertTitle>
+                  <AlertDescription>
+                    Siapa pun yang membuka aplikasi bisa masuk sebagai kamu. Pasang PIN kalau mau lebih aman.
+                  </AlertDescription>
+                </Alert>
               )}
-            </Field>
-          </FieldGroup>
+              {hasPin && (
+                <Field>
+                  <FieldLabel htmlFor="pin-current">PIN lama</FieldLabel>
+                  <PinInput id="pin-current" name="currentPin" />
+                </Field>
+              )}
+              <Field>
+                <FieldLabel htmlFor="pin-new">PIN baru</FieldLabel>
+                <PinInput id="pin-new" name="pin" />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="pin-confirm">Ulangi PIN baru</FieldLabel>
+                <PinInput id="pin-confirm" name="confirmPin" />
+                {hasPin && (
+                  <FieldDescription>Mengganti PIN akan mengeluarkan akunmu dari perangkat lain.</FieldDescription>
+                )}
+              </Field>
+            </FieldGroup>
+          </FieldSet>
         </form>
       </CardContent>
       <CardFooter className="justify-between gap-2">
@@ -211,24 +217,26 @@ function RemovePinDialog() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-sm">
         <form onSubmit={onSubmit} className="flex flex-col gap-6">
-          <DialogHeader>
-            <DialogTitle>Hapus PIN?</DialogTitle>
-            <DialogDescription>Akunmu akan terbuka lagi tanpa PIN. Masukkan PIN sekarang untuk konfirmasi.</DialogDescription>
-          </DialogHeader>
-          <Field>
-            <FieldLabel htmlFor="pin-remove">PIN sekarang</FieldLabel>
-            <PinInput id="pin-remove" name="currentPin" autoFocus />
-          </Field>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline">
-                Batal
-              </Button>
-            </DialogClose>
-            <SubmitButton pending={pending} variant="destructive">
-              Hapus PIN
-            </SubmitButton>
-          </DialogFooter>
+          <FieldSet disabled={pending} className="contents">
+            <DialogHeader>
+              <DialogTitle>Hapus PIN?</DialogTitle>
+              <DialogDescription>Akunmu akan terbuka lagi tanpa PIN. Masukkan PIN sekarang untuk konfirmasi.</DialogDescription>
+            </DialogHeader>
+            <Field>
+              <FieldLabel htmlFor="pin-remove">PIN sekarang</FieldLabel>
+              <PinInput id="pin-remove" name="currentPin" autoFocus />
+            </Field>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  Batal
+                </Button>
+              </DialogClose>
+              <SubmitButton pending={pending} variant="destructive">
+                Hapus PIN
+              </SubmitButton>
+            </DialogFooter>
+          </FieldSet>
         </form>
       </DialogContent>
     </Dialog>

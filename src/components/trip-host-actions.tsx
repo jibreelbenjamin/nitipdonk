@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CheckCheckIcon, LockIcon, LockOpenIcon, Trash2Icon } from "lucide-react";
 import { deleteTrip, setTripStatus } from "@/actions/trips";
 import { useActionRunner } from "@/hooks/use-action-feedback";
+import { startNavigation } from "@/lib/navigation-progress";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -78,7 +79,13 @@ export function TripHostActions({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={() => run(() => deleteTrip(tripId))}>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                startNavigation();
+                run(() => deleteTrip(tripId));
+              }}
+            >
               Hapus
             </AlertDialogAction>
           </AlertDialogFooter>

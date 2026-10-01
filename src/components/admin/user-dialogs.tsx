@@ -36,7 +36,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
@@ -59,31 +59,33 @@ export function CreateUserDialog() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <form onSubmit={onSubmit} className="flex flex-col gap-6">
-          <DialogHeader>
-            <DialogTitle>Tambah pengguna</DialogTitle>
-            <DialogDescription>Akun langsung bisa dipilih di halaman depan tanpa PIN.</DialogDescription>
-          </DialogHeader>
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="new-user-name">Nama</FieldLabel>
-              <Input id="new-user-name" name="name" maxLength={40} required autoFocus />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="new-user-avatar">Foto profil</FieldLabel>
-              <ImageInput id="new-user-avatar" name="avatar" shape="circle" onProcessingChange={setProcessing} />
-              <FieldDescription>Opsional, pengguna bisa menggantinya sendiri nanti.</FieldDescription>
-            </Field>
-          </FieldGroup>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline">
-                Batal
-              </Button>
-            </DialogClose>
-            <SubmitButton pending={pending} disabled={processing}>
-              Tambah
-            </SubmitButton>
-          </DialogFooter>
+          <FieldSet disabled={pending} className="contents">
+            <DialogHeader>
+              <DialogTitle>Tambah pengguna</DialogTitle>
+              <DialogDescription>Akun langsung bisa dipilih di halaman depan tanpa PIN.</DialogDescription>
+            </DialogHeader>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="new-user-name">Nama</FieldLabel>
+                <Input id="new-user-name" name="name" maxLength={40} required autoFocus />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="new-user-avatar">Foto profil</FieldLabel>
+                <ImageInput id="new-user-avatar" name="avatar" shape="circle" onProcessingChange={setProcessing} />
+                <FieldDescription>Opsional, pengguna bisa menggantinya sendiri nanti.</FieldDescription>
+              </Field>
+            </FieldGroup>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  Batal
+                </Button>
+              </DialogClose>
+              <SubmitButton pending={pending} disabled={processing}>
+                Tambah
+              </SubmitButton>
+            </DialogFooter>
+          </FieldSet>
         </form>
       </DialogContent>
     </Dialog>
@@ -120,23 +122,25 @@ export function UserRowActions({ user }: { user: { id: string; name: string } })
       <Dialog open={dialog === "rename"} onOpenChange={(open) => !open && close()}>
         <DialogContent className="sm:max-w-sm">
           <form onSubmit={rename.onSubmit} className="flex flex-col gap-6">
-            <DialogHeader>
-              <DialogTitle>Ubah nama</DialogTitle>
-              <DialogDescription>Nama ini tampil di halaman pilih akun dan daftar titipan.</DialogDescription>
-            </DialogHeader>
-            <input type="hidden" name="userId" value={user.id} />
-            <Field>
-              <FieldLabel htmlFor={`rename-${user.id}`}>Nama</FieldLabel>
-              <Input id={`rename-${user.id}`} name="name" defaultValue={user.name} maxLength={40} required />
-            </Field>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant="outline">
-                  Batal
-                </Button>
-              </DialogClose>
-              <SubmitButton pending={rename.pending}>Simpan</SubmitButton>
-            </DialogFooter>
+            <FieldSet disabled={rename.pending} className="contents">
+              <DialogHeader>
+                <DialogTitle>Ubah nama</DialogTitle>
+                <DialogDescription>Nama ini tampil di halaman pilih akun dan daftar titipan.</DialogDescription>
+              </DialogHeader>
+              <input type="hidden" name="userId" value={user.id} />
+              <Field>
+                <FieldLabel htmlFor={`rename-${user.id}`}>Nama</FieldLabel>
+                <Input id={`rename-${user.id}`} name="name" defaultValue={user.name} maxLength={40} required />
+              </Field>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button" variant="outline">
+                    Batal
+                  </Button>
+                </DialogClose>
+                <SubmitButton pending={rename.pending}>Simpan</SubmitButton>
+              </DialogFooter>
+            </FieldSet>
           </form>
         </DialogContent>
       </Dialog>
@@ -180,33 +184,35 @@ export function PinToggle({ user }: { user: { id: string; name: string; hasPin: 
       <Dialog open={dialog === "set"} onOpenChange={(open) => !open && close()}>
         <DialogContent className="sm:max-w-sm">
           <form onSubmit={set.onSubmit} className="flex flex-col gap-6">
-            <DialogHeader>
-              <DialogTitle>Pasang PIN {user.name}</DialogTitle>
-              <DialogDescription>
-                PIN {PIN_LENGTH} digit ini diminta saat memilih akun. {user.name} akan keluar dari semua
-                perangkat.
-              </DialogDescription>
-            </DialogHeader>
-            <input type="hidden" name="userId" value={user.id} />
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor={`admin-pin-${user.id}`}>PIN baru</FieldLabel>
-                <PinInput id={`admin-pin-${user.id}`} name="pin" autoFocus />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor={`admin-pin-confirm-${user.id}`}>Ulangi PIN</FieldLabel>
-                <PinInput id={`admin-pin-confirm-${user.id}`} name="confirmPin" />
-                <FieldDescription>Beri tahu PIN ini ke {user.name}, bisa diganti sendiri di Pengaturan.</FieldDescription>
-              </Field>
-            </FieldGroup>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant="outline">
-                  Batal
-                </Button>
-              </DialogClose>
-              <SubmitButton pending={set.pending}>Pasang PIN</SubmitButton>
-            </DialogFooter>
+            <FieldSet disabled={set.pending} className="contents">
+              <DialogHeader>
+                <DialogTitle>Pasang PIN {user.name}</DialogTitle>
+                <DialogDescription>
+                  PIN {PIN_LENGTH} digit ini diminta saat memilih akun. {user.name} akan keluar dari semua
+                  perangkat.
+                </DialogDescription>
+              </DialogHeader>
+              <input type="hidden" name="userId" value={user.id} />
+              <FieldGroup>
+                <Field>
+                  <FieldLabel htmlFor={`admin-pin-${user.id}`}>PIN baru</FieldLabel>
+                  <PinInput id={`admin-pin-${user.id}`} name="pin" autoFocus revealable />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor={`admin-pin-confirm-${user.id}`}>Ulangi PIN</FieldLabel>
+                  <PinInput id={`admin-pin-confirm-${user.id}`} name="confirmPin" revealable />
+                  <FieldDescription>Beri tahu PIN ini ke {user.name}, bisa diganti sendiri di Pengaturan.</FieldDescription>
+                </Field>
+              </FieldGroup>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button" variant="outline">
+                    Batal
+                  </Button>
+                </DialogClose>
+                <SubmitButton pending={set.pending}>Pasang PIN</SubmitButton>
+              </DialogFooter>
+            </FieldSet>
           </form>
         </DialogContent>
       </Dialog>

@@ -6,6 +6,7 @@ import { LockIcon } from "lucide-react";
 import { toast } from "sonner";
 import { signIn } from "@/actions/auth";
 import { PIN_LENGTH } from "@/lib/constants";
+import { startNavigation } from "@/lib/navigation-progress";
 import { PinInput } from "@/components/pin-input";
 import { SubmitButton } from "@/components/submit-button";
 import { UserAvatar } from "@/components/user-avatar";
@@ -37,6 +38,7 @@ export function ProfilePicker({ profiles }: { profiles: Profile[] }) {
     startTransition(async () => {
       const result = await signIn(profile.id, pinValue);
       if (result.ok) {
+        startNavigation();
         router.push("/titipan");
         return;
       }

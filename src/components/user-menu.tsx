@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useTransition } from "react";
 import { LogOutIcon, SettingsIcon } from "lucide-react";
 import { signOut } from "@/actions/auth";
+import { startNavigation } from "@/lib/navigation-progress";
 import { UserAvatar } from "@/components/user-avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,7 +34,12 @@ export function UserMenu({ name, avatarUrl }: { name: string; avatarUrl?: string
             Pengaturan
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => startTransition(() => signOut())}>
+        <DropdownMenuItem
+          onSelect={() => {
+            startNavigation();
+            startTransition(() => signOut());
+          }}
+        >
           <LogOutIcon />
           Ganti akun
         </DropdownMenuItem>

@@ -16,13 +16,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
 import { Textarea } from "@/components/ui/textarea";
 
 export function CreateTripDialog() {
-  const { pending, onSubmit } = useFormAction(createTrip);
+  const { pending, onSubmit } = useFormAction(createTrip, { navigates: true });
 
   return (
     <Dialog>
@@ -34,54 +34,56 @@ export function CreateTripDialog() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <form onSubmit={onSubmit} className="flex flex-col gap-6">
-          <DialogHeader>
-            <DialogTitle>Buka titipan</DialogTitle>
-            <DialogDescription>
-              Mau jalan beli sesuatu? Kabari yang lain biar bisa sekalian titip.
-            </DialogDescription>
-          </DialogHeader>
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="trip-title">Beli di mana / apa?</FieldLabel>
-              <Input id="trip-title" name="title" placeholder="Mixue depan kantor" maxLength={80} required autoFocus />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="trip-note">Catatan</FieldLabel>
-              <Textarea
-                id="trip-note"
-                name="note"
-                placeholder="Jalan jam 12 ya, maksimal 2 item per orang"
-                maxLength={300}
-                rows={3}
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="trip-closes-in">Tutup dalam</FieldLabel>
-              <InputGroup>
-                <InputGroupInput
-                  id="trip-closes-in"
-                  name="closesInMinutes"
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  max={MAX_CLOSE_MINUTES}
-                  placeholder="30"
+          <FieldSet disabled={pending} className="contents">
+            <DialogHeader>
+              <DialogTitle>Buka titipan</DialogTitle>
+              <DialogDescription>
+                Mau jalan beli sesuatu? Kabari yang lain biar bisa sekalian titip.
+              </DialogDescription>
+            </DialogHeader>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="trip-title">Beli di mana / apa?</FieldLabel>
+                <Input id="trip-title" name="title" placeholder="Mixue depan kantor" maxLength={80} required autoFocus />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="trip-note">Catatan</FieldLabel>
+                <Textarea
+                  id="trip-note"
+                  name="note"
+                  placeholder="Jalan jam 12 ya, maksimal 2 item per orang"
+                  maxLength={300}
+                  rows={3}
                 />
-                <InputGroupAddon align="inline-end">
-                  <InputGroupText>menit</InputGroupText>
-                </InputGroupAddon>
-              </InputGroup>
-              <FieldDescription>Opsional. Setelah itu orang tidak bisa titip lagi.</FieldDescription>
-            </Field>
-          </FieldGroup>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline">
-                Batal
-              </Button>
-            </DialogClose>
-            <SubmitButton pending={pending}>Buka titipan</SubmitButton>
-          </DialogFooter>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="trip-closes-in">Tutup dalam</FieldLabel>
+                <InputGroup>
+                  <InputGroupInput
+                    id="trip-closes-in"
+                    name="closesInMinutes"
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={MAX_CLOSE_MINUTES}
+                    placeholder="30"
+                  />
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupText>menit</InputGroupText>
+                  </InputGroupAddon>
+                </InputGroup>
+                <FieldDescription>Opsional. Setelah itu orang tidak bisa titip lagi.</FieldDescription>
+              </Field>
+            </FieldGroup>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  Batal
+                </Button>
+              </DialogClose>
+              <SubmitButton pending={pending}>Buka titipan</SubmitButton>
+            </DialogFooter>
+          </FieldSet>
         </form>
       </DialogContent>
     </Dialog>

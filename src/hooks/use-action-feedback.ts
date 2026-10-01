@@ -2,10 +2,16 @@
 
 import { startTransition, useActionState, useEffect, useRef, useTransition } from "react";
 import { toast } from "sonner";
+import { finishNavigation, startNavigation } from "@/lib/navigation-progress";
 
 type Result = { ok: true; message?: string } | { ok: false; error: string };
 
-type FeedbackOptions<S> = { success?: string | ((state: S) => string); onSuccess?: (state: S) => void };
+type FeedbackOptions<S> = {
+  success?: string | ((state: S) => string);
+  onSuccess?: (state: S) => void;
+  /** Action me-redirect saat sukses: tampilkan loading pindah halaman selama diproses. */
+  navigates?: boolean;
+};
 
 /** Tampilkan toast setiap kali hasil action berubah. */
 export function useActionFeedback<S extends Result>(state: S | null, options: FeedbackOptions<S> = {}) {
@@ -21,6 +27,8 @@ export function useActionFeedback<S extends Result>(state: S | null, options: Fe
       if (success) toast.success(typeof success === "function" ? success(state) : success);
       onSuccess?.(state);
     } else {
+      // Gagal berarti tidak jadi pindah halaman
+      finishNavigation();
       toast.error(state.error);
     }
   }, [state]);
@@ -41,11 +49,11 @@ export function useFormAction<S extends Result>(
     event.preventDefault();
     // Form di dalam Dialog (portal) tetap menjalar ke form induk di pohon React
     event.stopPropagation();
-    const formData = new FormData(event.currentTarget);
-    startTransition(() => dispatch(formData));
+    submit(new FormData(event.currentTarget));
   }
 
   function submit(formData: FormData) {
+    if (options.navigates) startNavigation();
     startTransition(() => dispatch(formData));
   }
 
@@ -59,7 +67,10 @@ export function useActionRunner() {
   function run(action: () => Promise<Result>, success?: string, onSuccess?: () => void) {
     startActionTransition(async () => {
       const result = await action();
+      // Action yang redirect tidak mengembalikan hasil
+      if (!result) return;
       if (!result.ok) {
+        finishNavigation();
         toast.error(result.error);
         return;
       }

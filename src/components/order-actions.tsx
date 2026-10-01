@@ -35,7 +35,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -142,36 +142,38 @@ function EditOrderForm({
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6">
-      <DialogHeader>
-        <DialogTitle>{ownerMode ? "Edit titipan" : "Ubah harga"}</DialogTitle>
-        <DialogDescription>
-          {ownerMode ? "Perbarui pesananmu." : "Isi harga sebenarnya setelah dibelikan."}
-        </DialogDescription>
-      </DialogHeader>
-      <input type="hidden" name="orderId" value={order.id} />
-      <FieldGroup>
-        {ownerMode ? (
+      <FieldSet disabled={pending} className="contents">
+        <DialogHeader>
+          <DialogTitle>{ownerMode ? "Edit titipan" : "Ubah harga"}</DialogTitle>
+          <DialogDescription>
+            {ownerMode ? "Perbarui pesananmu." : "Isi harga sebenarnya setelah dibelikan."}
+          </DialogDescription>
+        </DialogHeader>
+        <input type="hidden" name="orderId" value={order.id} />
+        <FieldGroup>
+          {ownerMode ? (
+            <Field>
+              <FieldLabel htmlFor="edit-items">Pesanan</FieldLabel>
+              <Textarea id="edit-items" name="items" defaultValue={order.items} maxLength={500} rows={3} required />
+            </Field>
+          ) : (
+            <p className="text-sm whitespace-pre-wrap text-muted-foreground">{order.items}</p>
+          )}
           <Field>
-            <FieldLabel htmlFor="edit-items">Pesanan</FieldLabel>
-            <Textarea id="edit-items" name="items" defaultValue={order.items} maxLength={500} rows={3} required />
+            <FieldLabel htmlFor="edit-price">Harga</FieldLabel>
+            <PriceInput id="edit-price" defaultValue={order.price} />
           </Field>
-        ) : (
-          <p className="text-sm whitespace-pre-wrap text-muted-foreground">{order.items}</p>
-        )}
-        <Field>
-          <FieldLabel htmlFor="edit-price">Harga</FieldLabel>
-          <PriceInput id="edit-price" defaultValue={order.price} />
-        </Field>
-        {ownerMode && <PaymentMethodField idPrefix="edit-method" value={method} onChange={setMethod} />}
-      </FieldGroup>
-      <DialogFooter>
-        <DialogClose asChild>
-          <Button type="button" variant="outline">
-            Batal
-          </Button>
-        </DialogClose>
-        <SubmitButton pending={pending}>Simpan</SubmitButton>
-      </DialogFooter>
+          {ownerMode && <PaymentMethodField idPrefix="edit-method" value={method} onChange={setMethod} />}
+        </FieldGroup>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button type="button" variant="outline">
+              Batal
+            </Button>
+          </DialogClose>
+          <SubmitButton pending={pending}>Simpan</SubmitButton>
+        </DialogFooter>
+      </FieldSet>
     </form>
   );
 }
@@ -182,26 +184,28 @@ function UploadProofForm({ orderId, onDone }: { orderId: string; onDone: () => v
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6">
-      <DialogHeader>
-        <DialogTitle>Bukti pembayaran</DialogTitle>
-        <DialogDescription>Upload screenshot transfer / QRIS. Gambar otomatis dikompres.</DialogDescription>
-      </DialogHeader>
-      <input type="hidden" name="orderId" value={orderId} />
-      <Field>
-        <FieldLabel htmlFor="proof-file">Foto bukti</FieldLabel>
-        <ImageInput id="proof-file" name="proof" onProcessingChange={setProcessing} />
-        <FieldDescription>Metode bayar otomatis diubah jadi cashless.</FieldDescription>
-      </Field>
-      <DialogFooter>
-        <DialogClose asChild>
-          <Button type="button" variant="outline">
-            Batal
-          </Button>
-        </DialogClose>
-        <SubmitButton pending={pending} disabled={processing}>
-          Upload
-        </SubmitButton>
-      </DialogFooter>
+      <FieldSet disabled={pending} className="contents">
+        <DialogHeader>
+          <DialogTitle>Bukti pembayaran</DialogTitle>
+          <DialogDescription>Upload screenshot transfer / QRIS. Gambar otomatis dikompres.</DialogDescription>
+        </DialogHeader>
+        <input type="hidden" name="orderId" value={orderId} />
+        <Field>
+          <FieldLabel htmlFor="proof-file">Foto bukti</FieldLabel>
+          <ImageInput id="proof-file" name="proof" onProcessingChange={setProcessing} />
+          <FieldDescription>Metode bayar otomatis diubah jadi cashless.</FieldDescription>
+        </Field>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button type="button" variant="outline">
+              Batal
+            </Button>
+          </DialogClose>
+          <SubmitButton pending={pending} disabled={processing}>
+            Upload
+          </SubmitButton>
+        </DialogFooter>
+      </FieldSet>
     </form>
   );
 }

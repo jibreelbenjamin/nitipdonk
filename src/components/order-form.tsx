@@ -8,7 +8,7 @@ import { PaymentMethodField, type PaymentMethodValue } from "@/components/paymen
 import { PriceInput } from "@/components/price-input";
 import { SubmitButton } from "@/components/submit-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 
 export function OrderForm({ tripId, hostName }: { tripId: string; hostName?: string }) {
@@ -32,36 +32,38 @@ export function OrderForm({ tripId, hostName }: { tripId: string; hostName?: str
       </CardHeader>
       <CardContent>
         <form key={formKey} onSubmit={onSubmit}>
-          <input type="hidden" name="tripId" value={tripId} />
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="order-items">Pesanan</FieldLabel>
-              <Textarea
-                id="order-items"
-                name="items"
-                placeholder={"Es kopi susu 1, less sugar\nRoti bakar cokelat 1"}
-                maxLength={500}
-                rows={3}
-                required
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="order-price">Harga</FieldLabel>
-              <PriceInput id="order-price" />
-              <FieldDescription>Opsional, perkiraan aja. Bisa diubah nanti.</FieldDescription>
-            </Field>
-            <PaymentMethodField idPrefix="order-method" value={method} onChange={setMethod} />
-            {method === "CASHLESS" && (
+          <FieldSet disabled={pending} className="contents">
+            <input type="hidden" name="tripId" value={tripId} />
+            <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="order-proof">Bukti pembayaran</FieldLabel>
-                <ImageInput id="order-proof" name="proof" onProcessingChange={setProcessing} />
-                <FieldDescription>Opsional, bisa diupload nanti setelah harga pasti.</FieldDescription>
+                <FieldLabel htmlFor="order-items">Pesanan</FieldLabel>
+                <Textarea
+                  id="order-items"
+                  name="items"
+                  placeholder={"Es kopi susu 1, less sugar\nRoti bakar cokelat 1"}
+                  maxLength={500}
+                  rows={3}
+                  required
+                />
               </Field>
-            )}
-            <SubmitButton pending={pending} disabled={processing}>
-              Titip
-            </SubmitButton>
-          </FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="order-price">Harga</FieldLabel>
+                <PriceInput id="order-price" />
+                <FieldDescription>Opsional, perkiraan aja. Bisa diubah nanti.</FieldDescription>
+              </Field>
+              <PaymentMethodField idPrefix="order-method" value={method} onChange={setMethod} />
+              {method === "CASHLESS" && (
+                <Field>
+                  <FieldLabel htmlFor="order-proof">Bukti pembayaran</FieldLabel>
+                  <ImageInput id="order-proof" name="proof" onProcessingChange={setProcessing} />
+                  <FieldDescription>Opsional, bisa diupload nanti setelah harga pasti.</FieldDescription>
+                </Field>
+              )}
+              <SubmitButton pending={pending} disabled={processing}>
+                Titip
+              </SubmitButton>
+            </FieldGroup>
+          </FieldSet>
         </form>
       </CardContent>
     </Card>

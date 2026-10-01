@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { ExternalLinkIcon, LogOutIcon } from "lucide-react";
-import { adminLogout } from "@/actions/admin";
+import { ExternalLinkIcon } from "lucide-react";
+import { AdminLogoutButton } from "@/components/admin/admin-logout-button";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -25,11 +25,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 <ExternalLinkIcon />
               </Link>
             </Button>
-            <form action={adminLogout}>
-              <Button variant="ghost" size="icon" aria-label="Keluar admin">
-                <LogOutIcon />
-              </Button>
-            </form>
+            <AdminLogoutButton />
           </div>
         </div>
         <div className="mx-auto w-full max-w-4xl px-4 pb-2">
