@@ -22,7 +22,7 @@ dari komputer developer, jadi deployment tidak butuh connection string database.
 - **Pembuka titipan** bisa menutup / membuka lagi / menandai selesai, menandai pesanan
   lunas, mengubah harga asli, dan menghapus pesanan.
 - **Pengaturan**: foto profil, info pembayaran (teks dan/atau gambar), pasang/ganti/hapus PIN.
-- **Admin** (`/admin`, dilindungi `ADMIN_PASSWORD`): tambah / ubah nama / reset PIN / hapus
+- **Admin** (`/admin`, dilindungi `ADMIN_PASSWORD`): tambah / ubah nama / reset PIN / nonaktifkan / hapus
   pengguna, statistik storage, hapus gambar per item atau massal berdasarkan umur.
 - **Kompresi gambar**: foto dikecilkan dulu di browser (maks 1600px), lalu server
   mengompres ulang ke WebP dengan `sharp` sebelum masuk storage:

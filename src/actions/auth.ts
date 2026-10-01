@@ -12,11 +12,12 @@ export async function signIn(userId: string, pin?: string) {
     const user = must(
       await db()
         .from("User")
-        .select("id, pinHash, pinFailedCount, pinLockedUntil, sessionVersion")
+        .select("id, isActive, pinHash, pinFailedCount, pinLockedUntil, sessionVersion")
         .eq("id", userId)
         .maybeSingle(),
     );
     if (!user) throw new ActionError("Akun tidak ditemukan");
+    if (!user.isActive) throw new ActionError("Akun ini sedang dinonaktifkan admin");
 
     if (user.pinHash) {
       const lockedUntil = user.pinLockedUntil ? new Date(user.pinLockedUntil) : null;

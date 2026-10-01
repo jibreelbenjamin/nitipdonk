@@ -19,6 +19,7 @@ export default async function HomePage() {
     await db()
       .from("User")
       .select("id, name, pinHash, avatar:Image!User_avatarId_fkey(path)")
+      .eq("isActive", true)
       .order("name"),
   );
   const profiles = users.map((user) => ({

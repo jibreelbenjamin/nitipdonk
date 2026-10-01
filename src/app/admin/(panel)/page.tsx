@@ -1,26 +1,33 @@
 import { UsersIcon } from "lucide-react";
-import { CreateUserDialog, PinToggle, UserRowActions } from "@/components/admin/user-dialogs";
+import { ActiveToggle, CreateUserDialog, PinToggle, UserRowActions } from "@/components/admin/user-dialogs";
 import { UserAvatar } from "@/components/user-avatar";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDateTime } from "@/lib/format";
 import { imageUrl } from "@/lib/images";
 import { db, must } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
 
 export default async function AdminUsersPage() {
   const users = must(
     await db()
       .from("User")
-      .select("id, name, pinHash, createdAt, avatar:Image!User_avatarId_fkey(path), trips:Trip(count), orders:Order(count)")
+      .select(
+        "id, name, pinHash, isActive, createdAt, avatar:Image!User_avatarId_fkey(path), trips:Trip(count), orders:Order(count)",
+      )
       .order("name"),
   );
+  const inactive = users.filter((user) => !user.isActive).length;
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Pengguna</CardTitle>
-        <CardDescription>{users.length} akun terdaftar</CardDescription>
+        <CardDescription>
+          {users.length} akun terdaftar{inactive > 0 && `, ${inactive} nonaktif`}
+        </CardDescription>
         <CardAction>
           <CreateUserDialog />
         </CardAction>
@@ -41,6 +48,7 @@ export default async function AdminUsersPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="pl-4">Nama</TableHead>
+                <TableHead>Aktif</TableHead>
                 <TableHead>PIN</TableHead>
                 <TableHead className="hidden text-right sm:table-cell">Titipan dibuka</TableHead>
                 <TableHead className="hidden text-right sm:table-cell">Pesanan</TableHead>
@@ -52,10 +60,14 @@ export default async function AdminUsersPage() {
               {users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="pl-4">
-                    <div className="flex items-center gap-2">
+                    <div className={cn("flex items-center gap-2", !user.isActive && "opacity-60")}>
                       <UserAvatar name={user.name} src={imageUrl(user.avatar)} />
                       <span className="font-medium">{user.name}</span>
+                      {!user.isActive && <Badge variant="outline">Nonaktif</Badge>}
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    <ActiveToggle user={{ id: user.id, name: user.name, isActive: user.isActive }} />
                   </TableCell>
                   <TableCell>
                     <PinToggle user={{ id: user.id, name: user.name, hasPin: Boolean(user.pinHash) }} />

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { EllipsisVerticalIcon, PencilIcon, Trash2Icon, UserPlusIcon } from "lucide-react";
-import { createUser, deleteUser, renameUser, resetUserPin, setUserPin } from "@/actions/admin";
+import { createUser, deleteUser, renameUser, resetUserPin, setUserActive, setUserPin } from "@/actions/admin";
 import { useActionRunner, useFormAction } from "@/hooks/use-action-feedback";
 import { PIN_LENGTH } from "@/lib/constants";
 import { ImageInput } from "@/components/image-input";
@@ -157,6 +157,46 @@ export function UserRowActions({ user }: { user: { id: string; name: string } })
             <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction variant="destructive" onClick={() => run(() => deleteUser(user.id), "Pengguna dihapus")}>
               Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
+/** Switch aktif per pengguna: matikan (dengan konfirmasi) untuk menonaktifkan akun, nyalakan untuk mengaktifkan lagi. */
+export function ActiveToggle({ user }: { user: { id: string; name: string; isActive: boolean } }) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pending, run] = useActionRunner();
+
+  return (
+    <>
+      <Switch
+        checked={user.isActive}
+        disabled={pending}
+        onCheckedChange={(checked) =>
+          checked ? run(() => setUserActive(user.id, true), `${user.name} diaktifkan`) : setConfirmOpen(true)
+        }
+        aria-label={`Akun ${user.name} aktif`}
+      />
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Nonaktifkan {user.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {user.name} langsung keluar dari semua perangkat dan tidak muncul di halaman pilih akun. Titipan
+              dan pesanannya tetap tersimpan, dan akun bisa diaktifkan lagi kapan saja.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => run(() => setUserActive(user.id, false), `${user.name} dinonaktifkan`)}
+            >
+              Nonaktifkan
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

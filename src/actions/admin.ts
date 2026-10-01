@@ -105,6 +105,24 @@ export async function setUserPin(_prev: ActionResult | null, formData: FormData)
   return result;
 }
 
+/** Akun nonaktif keluar dari semua perangkat dan tidak bisa dipilih, tapi titipan & pesanannya tetap ada. */
+export async function setUserActive(userId: string, isActive: boolean) {
+  const result = await runAction(async () => {
+    await requireAdmin();
+    const user = must(await db().from("User").select("id, sessionVersion").eq("id", userId).maybeSingle());
+    if (!user) throw new ActionError("Pengguna tidak ditemukan");
+    must(
+      await db()
+        .from("User")
+        // sessionVersion naik saat dinonaktifkan, jadi sesi lama tidak hidup lagi walau diaktifkan kembali
+        .update(isActive ? { isActive } : { isActive, sessionVersion: user.sessionVersion + 1 })
+        .eq("id", user.id),
+    );
+  });
+  refresh();
+  return result;
+}
+
 export async function deleteUser(userId: string) {
   const result = await runAction(async () => {
     await requireAdmin();

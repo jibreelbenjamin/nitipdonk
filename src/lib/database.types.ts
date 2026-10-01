@@ -188,6 +188,7 @@ export type Database = {
           avatarId: string | null
           createdAt: string
           id: string
+          isActive: boolean
           name: string
           paymentInfo: string | null
           paymentQrId: string | null
@@ -201,6 +202,7 @@ export type Database = {
           avatarId?: string | null
           createdAt?: string
           id?: string
+          isActive?: boolean
           name: string
           paymentInfo?: string | null
           paymentQrId?: string | null
@@ -214,6 +216,7 @@ export type Database = {
           avatarId?: string | null
           createdAt?: string
           id?: string
+          isActive?: boolean
           name?: string
           paymentInfo?: string | null
           paymentQrId?: string | null
