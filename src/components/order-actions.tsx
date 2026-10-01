@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { EllipsisVerticalIcon, ImageUpIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import { ImageUpIcon, PencilIcon, Trash2Icon } from "lucide-react";
 import { deleteOrder, updateOrder, uploadProof } from "@/actions/orders";
 import { useActionRunner, useFormAction } from "@/hooks/use-action-feedback";
 import { ImageInput } from "@/components/image-input";
@@ -28,13 +28,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
@@ -62,36 +55,26 @@ export function OrderActions({ order, can }: { order: OrderActionsData; can: Per
 
   return (
     <>
-      <DropdownMenu modal={false}>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon-sm" aria-label="Aksi titipan" disabled={pending}>
-            {pending ? <Spinner /> : <EllipsisVerticalIcon />}
+      <div className="mt-2 flex flex-wrap gap-2">
+        {can.canEdit && (
+          <Button variant="outline" size="sm" disabled={pending} onClick={() => setDialog("edit")}>
+            <PencilIcon data-icon="inline-start" />
+            {can.isOwner ? "Edit" : "Ubah harga"}
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-52">
-          {can.canEdit && (
-            <DropdownMenuItem onSelect={() => setDialog("edit")}>
-              <PencilIcon />
-              {can.isOwner ? "Edit titipan" : "Ubah harga"}
-            </DropdownMenuItem>
-          )}
-          {can.isOwner && (
-            <DropdownMenuItem onSelect={() => setDialog("proof")}>
-              <ImageUpIcon />
-              {order.hasProof ? "Ganti bukti bayar" : "Upload bukti bayar"}
-            </DropdownMenuItem>
-          )}
-          {can.canDelete && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onSelect={() => setDialog("delete")}>
-                <Trash2Icon />
-                Hapus titipan
-              </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+        )}
+        {can.isOwner && (
+          <Button variant="outline" size="sm" disabled={pending} onClick={() => setDialog("proof")}>
+            <ImageUpIcon data-icon="inline-start" />
+            {order.hasProof ? "Ganti bukti" : "Upload bukti"}
+          </Button>
+        )}
+        {can.canDelete && (
+          <Button variant="destructive" size="sm" disabled={pending} onClick={() => setDialog("delete")}>
+            {pending ? <Spinner data-icon="inline-start" /> : <Trash2Icon data-icon="inline-start" />}
+            Hapus
+          </Button>
+        )}
+      </div>
 
       <Dialog open={dialog === "edit"} onOpenChange={(open) => !open && close()}>
         <DialogContent className="sm:max-w-md">

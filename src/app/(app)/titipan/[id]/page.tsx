@@ -33,7 +33,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
-import { Item, ItemActions, ItemContent, ItemGroup, ItemMedia, ItemTitle } from "@/components/ui/item";
+import { Item, ItemContent, ItemGroup, ItemMedia, ItemTitle } from "@/components/ui/item";
 import { formatDateTime, formatRelative, formatRupiah } from "@/lib/format";
 import { imageUrl } from "@/lib/images";
 import type { OfflineTrip } from "@/lib/offline-trips";
@@ -248,6 +248,16 @@ export default async function TripPage({ params }: PageProps<"/titipan/[id]">) {
                       )}
                       <span className="text-xs text-muted-foreground">{formatRelative(order.createdAt)}</span>
                     </div>
+                    <OrderActions
+                      order={{
+                        id: order.id,
+                        items: order.items,
+                        price: order.price,
+                        paymentMethod: order.paymentMethod,
+                        hasProof: Boolean(order.proof),
+                      }}
+                      can={{ isOwner, canEdit, canDelete }}
+                    />
                   </ItemContent>
                   {order.proof && (
                     <ImagePreview
@@ -260,18 +270,6 @@ export default async function TripPage({ params }: PageProps<"/titipan/[id]">) {
                       className="size-14 shrink-0"
                     />
                   )}
-                  <ItemActions>
-                    <OrderActions
-                      order={{
-                        id: order.id,
-                        items: order.items,
-                        price: order.price,
-                        paymentMethod: order.paymentMethod,
-                        hasProof: Boolean(order.proof),
-                      }}
-                      can={{ isOwner, canEdit, canDelete }}
-                    />
-                  </ItemActions>
                 </Item>
               );
             })}
