@@ -188,7 +188,9 @@ export default async function TripPage({ params }: PageProps<"/titipan/[id]">) {
           <InfoIcon />
           <AlertTitle>Titipan sudah ditutup</AlertTitle>
           <AlertDescription>
-            Sudah tidak bisa titip lagi, tapi bukti pembayaran masih bisa diupload.
+            {isHost
+              ? "Sudah tidak bisa titip lagi, tapi bukti pembayaran masih bisa diupload."
+              : "Pesanan sudah tidak bisa ditambah, diubah, atau dihapus. Bukti pembayaran masih bisa diupload."}
           </AlertDescription>
         </Alert>
       )}
@@ -210,8 +212,8 @@ export default async function TripPage({ params }: PageProps<"/titipan/[id]">) {
           <ItemGroup className="gap-2">
             {orders.map((order) => {
               const isOwner = order.userId === user.id;
-              const canEdit = trip.status !== "DONE" && (isOwner || isHost);
-              const canDelete = trip.status !== "DONE" && (isHost || (isOwner && accepting));
+              // Setelah ditutup, pemesan hanya bisa upload bukti; pembuka masih bisa ubah harga & hapus
+              const canChange = trip.status !== "DONE" && (isHost || (isOwner && accepting));
               return (
                 <Item key={order.id} variant="outline" className="flex-nowrap items-start">
                   <ItemMedia>
@@ -256,7 +258,7 @@ export default async function TripPage({ params }: PageProps<"/titipan/[id]">) {
                         paymentMethod: order.paymentMethod,
                         hasProof: Boolean(order.proof),
                       }}
-                      can={{ isOwner, canEdit, canDelete }}
+                      can={{ isOwner, isHost, canChange }}
                     />
                   </ItemContent>
                   {order.proof && (

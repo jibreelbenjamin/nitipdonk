@@ -65,7 +65,10 @@ export async function createOrder(_prev: ActionResult | null, formData: FormData
   return result;
 }
 
-/** Pemesan bisa ubah semuanya; pembuka titipan hanya bisa ubah harga (harga asli setelah dibeli). */
+/**
+ * Pemesan bisa ubah semuanya selama titipan masih buka; setelah ditutup hanya bisa upload bukti.
+ * Pembuka titipan hanya bisa ubah harga (harga asli setelah dibeli), termasuk setelah ditutup.
+ */
 export async function updateOrder(_prev: ActionResult | null, formData: FormData) {
   const result = await runAction(async () => {
     const user = await requireUser();
@@ -74,6 +77,9 @@ export async function updateOrder(_prev: ActionResult | null, formData: FormData
     const isHost = order.trip.hostId === user.id;
     if (!isOwner && !isHost) throw new ActionError("Kamu tidak bisa mengubah titipan ini");
     if (order.trip.status === "DONE") throw new ActionError("Titipan sudah selesai");
+    if (!isHost && !isAcceptingOrders(order.trip)) {
+      throw new ActionError("Titipan sudah ditutup, pesanan tidak bisa diubah lagi");
+    }
 
     const price = getPrice(formData, "price");
     if (!isOwner) {

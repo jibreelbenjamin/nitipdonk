@@ -42,8 +42,9 @@ export type OrderActionsData = {
 
 type Permissions = {
   isOwner: boolean;
-  canEdit: boolean;
-  canDelete: boolean;
+  isHost: boolean;
+  /** Boleh ubah & hapus sekarang. Kalau tidak (mis. titipan sudah ditutup), tombolnya dinonaktifkan. */
+  canChange: boolean;
 };
 
 export function OrderActions({ order, can }: { order: OrderActionsData; can: Permissions }) {
@@ -51,29 +52,27 @@ export function OrderActions({ order, can }: { order: OrderActionsData; can: Per
   const [pending, run] = useActionRunner();
   const close = () => setDialog(null);
 
-  if (!can.canEdit && !can.isOwner && !can.canDelete) return null;
+  if (!can.isOwner && !can.isHost) return null;
+  const locked = pending || !can.canChange;
 
   return (
     <>
       <div className="mt-2 flex flex-wrap gap-2">
-        {can.canEdit && (
-          <Button variant="outline" size="sm" disabled={pending} onClick={() => setDialog("edit")}>
-            <PencilIcon data-icon="inline-start" />
-            {can.isOwner ? "Edit" : "Ubah harga"}
-          </Button>
-        )}
+        <Button variant="outline" size="sm" disabled={locked} onClick={() => setDialog("edit")}>
+          <PencilIcon data-icon="inline-start" />
+          {can.isOwner ? "Edit" : "Ubah harga"}
+        </Button>
+        {/* Bukti bayar tetap bisa diupload kapan saja, termasuk setelah titipan ditutup */}
         {can.isOwner && (
           <Button variant="outline" size="sm" disabled={pending} onClick={() => setDialog("proof")}>
             <ImageUpIcon data-icon="inline-start" />
             {order.hasProof ? "Ganti bukti" : "Upload bukti"}
           </Button>
         )}
-        {can.canDelete && (
-          <Button variant="destructive" size="sm" disabled={pending} onClick={() => setDialog("delete")}>
-            {pending ? <Spinner data-icon="inline-start" /> : <Trash2Icon data-icon="inline-start" />}
-            Hapus
-          </Button>
-        )}
+        <Button variant="destructive" size="sm" disabled={locked} onClick={() => setDialog("delete")}>
+          {pending ? <Spinner data-icon="inline-start" /> : <Trash2Icon data-icon="inline-start" />}
+          Hapus
+        </Button>
       </div>
 
       <Dialog open={dialog === "edit"} onOpenChange={(open) => !open && close()}>
