@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -5,6 +6,7 @@ import {
   BanknoteIcon,
   InfoIcon,
   ReceiptTextIcon,
+  Share2Icon,
   SmartphoneIcon,
   TriangleAlertIcon,
 } from "lucide-react";
@@ -34,7 +36,7 @@ import { formatDateTime, formatRelative, formatRupiah } from "@/lib/format";
 import { imageUrl } from "@/lib/images";
 import { requireUser } from "@/lib/session";
 import { db, must } from "@/lib/supabase";
-import { isAcceptingOrders } from "@/lib/trips";
+import { isAcceptingOrders, whatsappShareUrl } from "@/lib/trips";
 
 export default async function TripPage({ params }: PageProps<"/titipan/[id]">) {
   const { id } = await params;
@@ -55,6 +57,9 @@ export default async function TripPage({ params }: PageProps<"/titipan/[id]">) {
 
   const isHost = trip.hostId === user.id;
   const accepting = isAcceptingOrders(trip);
+  const requestHeaders = await headers();
+  const domain = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+  const protocol = requestHeaders.get("x-forwarded-proto") ?? (domain?.startsWith("localhost") ? "http" : "https");
   const { host, orders } = trip;
   const total = orders.reduce((sum, order) => sum + (order.price ?? 0), 0);
   const paidCount = orders.filter((order) => order.isPaid).length;
@@ -81,8 +86,25 @@ export default async function TripPage({ params }: PageProps<"/titipan/[id]">) {
           <CardTitle className="pt-1 text-xl">{trip.title}</CardTitle>
           {trip.note && <CardDescription className="whitespace-pre-wrap">{trip.note}</CardDescription>}
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-wrap items-center justify-between gap-2">
           <TripStatusBadge trip={trip} />
+          <Button variant="outline" size="sm" asChild>
+            <a
+              href={whatsappShareUrl({
+                title: trip.title,
+                note: trip.note,
+                closesAt: trip.closesAt,
+                hostName: host.name,
+                accepting,
+                url: `${protocol}://${domain}/titipan/${trip.id}`,
+              })}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <Share2Icon data-icon="inline-start" />
+              Bagikan ke WA
+            </a>
+          </Button>
         </CardContent>
         {isHost && (
           <CardFooter>
