@@ -1,5 +1,5 @@
 import { LIVE_WINDOW_HOURS } from "./constants";
-import { formatTime } from "./format";
+import { formatRupiah, formatTime } from "./format";
 
 type TripState = { status: "OPEN" | "CLOSED" | "DONE"; closesAt: string | null };
 
@@ -25,4 +25,38 @@ export function whatsappShareUrl(trip: {
   if (trip.note) lines.push(`Catatan: ${trip.note}`);
   lines.push("", trip.accepting ? "Mau ikut titip? Buka di sini:" : "Lihat titipannya di sini:", trip.url);
   return `https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`;
+}
+
+type RecapOrder = {
+  name: string;
+  items: string;
+  price: number | null;
+  paymentMethod: "CASH" | "CASHLESS";
+  isPaid: boolean;
+};
+
+/** Rekap semua pesanan sebagai teks biasa, siap ditempel ke WhatsApp atau catatan. */
+export function tripRecap(trip: { title: string; hostName: string; orders: RecapOrder[] }) {
+  const { orders } = trip;
+  const total = orders.reduce((sum, order) => sum + (order.price ?? 0), 0);
+  const cashCount = orders.filter((order) => order.paymentMethod === "CASH").length;
+  const paidCount = orders.filter((order) => order.isPaid).length;
+
+  const lines = [`*Rekap titipan: ${trip.title}*`, `Dibuka ${trip.hostName} · ${orders.length} pesanan`];
+  orders.forEach((order, index) => {
+    const details = [
+      order.price !== null ? formatRupiah(order.price) : null,
+      order.paymentMethod === "CASH" ? "Cash" : "Cashless",
+      order.isPaid ? "Lunas" : "Belum lunas",
+    ];
+    lines.push("", `${index + 1}. *${order.name}*`, order.items, details.filter(Boolean).join(" · "));
+  });
+  const summary = [
+    total > 0 ? `Total ${formatRupiah(total)}` : null,
+    `${orders.length - cashCount} cashless`,
+    `${cashCount} cash`,
+    `${paidCount}/${orders.length} lunas`,
+  ];
+  lines.push("", summary.filter(Boolean).join(" · "));
+  return lines.join("\n");
 }

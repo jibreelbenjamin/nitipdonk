@@ -15,7 +15,9 @@ import { CopyButton } from "@/components/copy-button";
 import { ImagePreview } from "@/components/image-preview";
 import { OrderActions } from "@/components/order-actions";
 import { OrderForm } from "@/components/order-form";
+import { OrdersSummary } from "@/components/orders-summary";
 import { PaidToggle } from "@/components/paid-toggle";
+import { SaveTripOffline } from "@/components/save-trip-offline";
 import { TripHostActions } from "@/components/trip-host-actions";
 import { TripStatusBadge } from "@/components/trip-status-badge";
 import { UserAvatar } from "@/components/user-avatar";
@@ -34,9 +36,10 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/
 import { Item, ItemActions, ItemContent, ItemGroup, ItemMedia, ItemTitle } from "@/components/ui/item";
 import { formatDateTime, formatRelative, formatRupiah } from "@/lib/format";
 import { imageUrl } from "@/lib/images";
+import type { OfflineTrip } from "@/lib/offline-trips";
 import { requireUser } from "@/lib/session";
 import { db, must } from "@/lib/supabase";
-import { isAcceptingOrders, whatsappShareUrl } from "@/lib/trips";
+import { isAcceptingOrders, tripRecap, whatsappShareUrl } from "@/lib/trips";
 
 export default async function TripPage({ params }: PageProps<"/titipan/[id]">) {
   const { id } = await params;
@@ -61,9 +64,29 @@ export default async function TripPage({ params }: PageProps<"/titipan/[id]">) {
   const domain = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (domain?.startsWith("localhost") ? "http" : "https");
   const { host, orders } = trip;
-  const total = orders.reduce((sum, order) => sum + (order.price ?? 0), 0);
-  const paidCount = orders.filter((order) => order.isPaid).length;
-  const cashCount = orders.filter((order) => order.paymentMethod === "CASH").length;
+  // Salinan teks (tanpa gambar) yang disimpan di HP untuk dibaca saat offline
+  const offlineTrip: OfflineTrip = {
+    id: trip.id,
+    title: trip.title,
+    note: trip.note,
+    hostName: host.name,
+    isHost,
+    status: trip.status,
+    closesAt: trip.closesAt,
+    createdAt: trip.createdAt,
+    savedAt: new Date().toISOString(),
+    orders: orders.map((order) => ({
+      id: order.id,
+      name: order.user.name,
+      items: order.items,
+      price: order.price,
+      paymentMethod: order.paymentMethod,
+      isPaid: order.isPaid,
+      hasProof: Boolean(order.proof),
+      isMine: order.userId === user.id,
+      createdAt: order.createdAt,
+    })),
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -87,24 +110,30 @@ export default async function TripPage({ params }: PageProps<"/titipan/[id]">) {
           {trip.note && <CardDescription className="whitespace-pre-wrap">{trip.note}</CardDescription>}
         </CardHeader>
         <CardContent className="flex flex-wrap items-center justify-between gap-2">
-          <TripStatusBadge trip={trip} />
-          <Button variant="outline" size="sm" asChild>
-            <a
-              href={whatsappShareUrl({
-                title: trip.title,
-                note: trip.note,
-                closesAt: trip.closesAt,
-                hostName: host.name,
-                accepting,
-                url: `${protocol}://${domain}/titipan/${trip.id}`,
-              })}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <Share2Icon data-icon="inline-start" />
-              Bagikan ke WA
-            </a>
-          </Button>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <TripStatusBadge trip={trip} />
+            <SaveTripOffline userId={user.id} trip={offlineTrip} />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {orders.length > 0 && <CopyButton value={tripRecap(offlineTrip)} label="Salin rekap" />}
+            <Button variant="outline" size="sm" asChild>
+              <a
+                href={whatsappShareUrl({
+                  title: trip.title,
+                  note: trip.note,
+                  closesAt: trip.closesAt,
+                  hostName: host.name,
+                  accepting,
+                  url: `${protocol}://${domain}/titipan/${trip.id}`,
+                })}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Share2Icon data-icon="inline-start" />
+                Bagikan ke WA
+              </a>
+            </Button>
+          </div>
         </CardContent>
         {isHost && (
           <CardFooter>
@@ -165,31 +194,7 @@ export default async function TripPage({ params }: PageProps<"/titipan/[id]">) {
       )}
 
       <section className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <h2 className="font-heading text-lg font-semibold tracking-tight">
-            Daftar titipan ({orders.length})
-          </h2>
-          {total > 0 && (
-            <span className="text-sm text-muted-foreground">
-              Total <span className="font-medium text-foreground">{formatRupiah(total)}</span>
-            </span>
-          )}
-        </div>
-        {orders.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            <Badge variant="outline">
-              <SmartphoneIcon data-icon="inline-start" />
-              {orders.length - cashCount} cashless
-            </Badge>
-            <Badge variant="outline">
-              <BanknoteIcon data-icon="inline-start" />
-              {cashCount} cash
-            </Badge>
-            <Badge variant="secondary">
-              {paidCount}/{orders.length} lunas
-            </Badge>
-          </div>
-        )}
+        <OrdersSummary orders={orders} />
 
         {orders.length === 0 ? (
           <Empty className="border">

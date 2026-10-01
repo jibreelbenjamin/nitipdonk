@@ -5,6 +5,7 @@ import { CheckCheckIcon, LockIcon, LockOpenIcon, Trash2Icon } from "lucide-react
 import { deleteTrip, setTripStatus } from "@/actions/trips";
 import { useActionRunner } from "@/hooks/use-action-feedback";
 import { startNavigation } from "@/lib/navigation-progress";
+import { removeOfflineTrip } from "@/lib/offline-trips";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -82,6 +83,7 @@ export function TripHostActions({
             <AlertDialogAction
               variant="destructive"
               onClick={() => {
+                removeOfflineTrip(tripId);
                 startNavigation();
                 run(() => deleteTrip(tripId));
               }}

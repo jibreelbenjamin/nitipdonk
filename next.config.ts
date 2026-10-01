@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  env: {
+    // Berbeda setiap deploy; dipakai service worker untuk menyimpan ulang halaman offline terbaru
+    NEXT_PUBLIC_BUILD_ID: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 12) ?? Date.now().toString(36),
+  },
   experimental: {
     serverActions: {
       // Foto sudah dikecilkan di browser, tapi beri ruang kalau browser gagal mengecilkannya
