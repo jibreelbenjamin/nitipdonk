@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { InstallAppButton } from "@/components/install-app-button";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/user-menu";
@@ -15,6 +16,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <Logo />
           </Link>
           <div className="flex items-center gap-1">
+            <InstallAppButton />
             <ThemeToggle />
             <UserMenu name={user.name} avatarUrl={imageUrl(user.avatar)} />
           </div>

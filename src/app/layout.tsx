@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { NavigationShell } from "@/components/navigation-shell";
+import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <NavigationShell>{children}</NavigationShell>
           </TooltipProvider>
           <Toaster position="top-center" richColors />
+          <ServiceWorkerRegistration />
         </ThemeProvider>
       </body>
     </html>

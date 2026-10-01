@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ShieldIcon, UsersIcon } from "lucide-react";
+import { InstallAppButton } from "@/components/install-app-button";
 import { Logo } from "@/components/logo";
 import { ProfilePicker } from "@/components/profile-picker";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -28,7 +29,8 @@ export default async function HomePage() {
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-10 px-4 py-12">
-      <div className="absolute top-4 right-4">
+      <div className="absolute top-4 right-4 flex items-center gap-1">
+        <InstallAppButton />
         <ThemeToggle />
       </div>
       <div className="flex flex-col items-center gap-3 text-center">
