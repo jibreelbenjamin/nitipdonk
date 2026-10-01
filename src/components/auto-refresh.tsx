@@ -8,17 +8,14 @@ export function AutoRefresh({ interval = 10_000 }: { interval?: number }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Saat offline jangan coba refresh; begitu online lagi langsung ambil data terbaru
     const tick = () => {
-      if (document.visibilityState === "visible" && navigator.onLine) router.refresh();
+      if (document.visibilityState === "visible") router.refresh();
     };
     const id = setInterval(tick, interval);
     document.addEventListener("visibilitychange", tick);
-    window.addEventListener("online", tick);
     return () => {
       clearInterval(id);
       document.removeEventListener("visibilitychange", tick);
-      window.removeEventListener("online", tick);
     };
   }, [router, interval]);
 

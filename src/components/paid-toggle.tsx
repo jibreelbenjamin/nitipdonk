@@ -3,7 +3,6 @@
 import { useOptimistic, useTransition } from "react";
 import { toast } from "sonner";
 import { setOrderPaid } from "@/actions/orders";
-import { offlineSafe } from "@/lib/offline";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
@@ -17,7 +16,7 @@ export function PaidToggle({ orderId, isPaid }: { orderId: string; isPaid: boole
   function toggle(checked: boolean) {
     startTransition(async () => {
       setOptimisticPaid(checked);
-      const result = await offlineSafe(setOrderPaid(orderId, checked));
+      const result = await setOrderPaid(orderId, checked);
       if (!result.ok) toast.error(result.error);
     });
   }

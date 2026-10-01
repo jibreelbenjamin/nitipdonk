@@ -3,10 +3,8 @@
 import Link from "next/link";
 import { useTransition } from "react";
 import { LogOutIcon, SettingsIcon } from "lucide-react";
-import { toast } from "sonner";
 import { signOut } from "@/actions/auth";
-import { finishNavigation, startNavigation } from "@/lib/navigation-progress";
-import { clearSavedPages, OFFLINE_MESSAGE } from "@/lib/offline";
+import { startNavigation } from "@/lib/navigation-progress";
 import { UserAvatar } from "@/components/user-avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,18 +36,8 @@ export function UserMenu({ name, avatarUrl }: { name: string; avatarUrl?: string
         </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={() => {
-            if (!navigator.onLine) {
-              toast.error(OFFLINE_MESSAGE);
-              return;
-            }
             startNavigation();
-            startTransition(async () => {
-              await clearSavedPages();
-              await signOut().catch(() => {
-                finishNavigation();
-                toast.error(OFFLINE_MESSAGE);
-              });
-            });
+            startTransition(() => signOut());
           }}
         >
           <LogOutIcon />

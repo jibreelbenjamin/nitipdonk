@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { signIn } from "@/actions/auth";
 import { PIN_LENGTH } from "@/lib/constants";
 import { startNavigation } from "@/lib/navigation-progress";
-import { offlineSafe } from "@/lib/offline";
 import { PinInput } from "@/components/pin-input";
 import { SubmitButton } from "@/components/submit-button";
 import { UserAvatar } from "@/components/user-avatar";
@@ -37,7 +36,7 @@ export function ProfilePicker({ profiles }: { profiles: Profile[] }) {
     setPendingId(profile.id);
     setError(null);
     startTransition(async () => {
-      const result = await offlineSafe(signIn(profile.id, pinValue));
+      const result = await signIn(profile.id, pinValue);
       if (result.ok) {
         startNavigation();
         router.push("/titipan");
