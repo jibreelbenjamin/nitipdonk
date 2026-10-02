@@ -225,6 +225,7 @@ export type Database = {
           pinHash: string | null
           pinLockedUntil: string | null
           sessionVersion: number
+          showWhenInactive: boolean
           updatedAt: string
         }
         Insert: {
@@ -239,6 +240,7 @@ export type Database = {
           pinHash?: string | null
           pinLockedUntil?: string | null
           sessionVersion?: number
+          showWhenInactive?: boolean
           updatedAt?: string
         }
         Update: {
@@ -253,6 +255,7 @@ export type Database = {
           pinHash?: string | null
           pinLockedUntil?: string | null
           sessionVersion?: number
+          showWhenInactive?: boolean
           updatedAt?: string
         }
         Relationships: [

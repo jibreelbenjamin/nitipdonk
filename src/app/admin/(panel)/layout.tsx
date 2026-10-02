@@ -14,7 +14,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <>
       <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
-        <div className="mx-auto flex h-14 w-full max-w-4xl items-center justify-between gap-2 px-4">
+        <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-2 px-4">
           <div className="flex items-center gap-2">
             <Logo />
             <Badge variant="secondary">Admin</Badge>
@@ -30,11 +30,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <AdminLogoutButton />
           </div>
         </div>
-        <div className="mx-auto w-full max-w-4xl px-4 pb-2">
+        <div className="mx-auto w-full max-w-6xl px-4 pb-2">
           <AdminNav />
         </div>
       </header>
-      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-6">{children}</main>
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-6">{children}</main>
     </>
   );
 }

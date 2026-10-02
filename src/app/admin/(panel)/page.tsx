@@ -1,91 +1,42 @@
-import { UsersIcon } from "lucide-react";
-import { ActiveToggle, CreateUserDialog, PinToggle, UserRowActions } from "@/components/admin/user-dialogs";
-import { UserAvatar } from "@/components/user-avatar";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatDateTime } from "@/lib/format";
+import { type AdminUserRow, AdminUsersTable } from "@/components/admin/users-table";
 import { imageUrl } from "@/lib/images";
+import { requireAdmin } from "@/lib/session";
 import { db, must } from "@/lib/supabase";
-import { cn } from "@/lib/utils";
 
 export default async function AdminUsersPage() {
+  // Cek di halaman juga: layout tidak dirender ulang saat pindah halaman, jadi tidak cukup sendirian
+  await requireAdmin();
   const users = must(
     await db()
       .from("User")
       .select(
-        "id, name, pinHash, isActive, createdAt, avatar:Image!User_avatarId_fkey(path), trips:Trip(count), orders:Order(count)",
+        "id, name, pinHash, isActive, showWhenInactive, createdAt, avatar:Image!User_avatarId_fkey(path), trips:Trip(count), orders:Order(count)",
       )
       .order("name"),
   );
-  const inactive = users.filter((user) => !user.isActive).length;
+  const rows: AdminUserRow[] = users.map((user) => ({
+    id: user.id,
+    name: user.name,
+    avatarUrl: imageUrl(user.avatar),
+    isActive: user.isActive,
+    showWhenInactive: user.showWhenInactive,
+    hasPin: Boolean(user.pinHash),
+    tripCount: user.trips[0]?.count ?? 0,
+    orderCount: user.orders[0]?.count ?? 0,
+    createdAt: user.createdAt,
+  }));
+  const inactive = rows.filter((user) => !user.isActive).length;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Pengguna</CardTitle>
-        <CardDescription>
-          {users.length} akun terdaftar{inactive > 0 && `, ${inactive} nonaktif`}
-        </CardDescription>
-        <CardAction>
-          <CreateUserDialog />
-        </CardAction>
-      </CardHeader>
-      <CardContent className={users.length > 0 ? "px-0" : undefined}>
-        {users.length === 0 ? (
-          <Empty className="border">
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <UsersIcon />
-              </EmptyMedia>
-              <EmptyTitle>Belum ada pengguna</EmptyTitle>
-              <EmptyDescription>Tambahkan akun untuk teman-teman kantormu.</EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="pl-4">Nama</TableHead>
-                <TableHead>Aktif</TableHead>
-                <TableHead>PIN</TableHead>
-                <TableHead className="hidden text-right sm:table-cell">Titipan dibuka</TableHead>
-                <TableHead className="hidden text-right sm:table-cell">Pesanan</TableHead>
-                <TableHead className="hidden md:table-cell">Dibuat</TableHead>
-                <TableHead className="w-12 pr-4" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="pl-4">
-                    <div className={cn("flex items-center gap-2", !user.isActive && "opacity-60")}>
-                      <UserAvatar name={user.name} src={imageUrl(user.avatar)} />
-                      <span className="font-medium">{user.name}</span>
-                      {!user.isActive && <Badge variant="outline">Nonaktif</Badge>}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <ActiveToggle user={{ id: user.id, name: user.name, isActive: user.isActive }} />
-                  </TableCell>
-                  <TableCell>
-                    <PinToggle user={{ id: user.id, name: user.name, hasPin: Boolean(user.pinHash) }} />
-                  </TableCell>
-                  <TableCell className="hidden text-right tabular-nums sm:table-cell">{user.trips[0]?.count ?? 0}</TableCell>
-                  <TableCell className="hidden text-right tabular-nums sm:table-cell">{user.orders[0]?.count ?? 0}</TableCell>
-                  <TableCell className="hidden text-muted-foreground md:table-cell">
-                    {formatDateTime(user.createdAt)}
-                  </TableCell>
-                  <TableCell className="pr-4 text-right">
-                    <UserRowActions user={{ id: user.id, name: user.name }} />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </CardContent>
-    </Card>
+    <>
+      <div className="flex flex-col gap-1">
+        <h1 className="font-heading text-2xl font-semibold tracking-tight">Pengguna</h1>
+        <p className="text-sm text-muted-foreground">
+          {rows.length} akun terdaftar{inactive > 0 && `, ${inactive} nonaktif`}. Akun nonaktif tampil abu-abu di
+          halaman pilih akun, kecuali disembunyikan.
+        </p>
+      </div>
+      <AdminUsersTable users={rows} />
+    </>
   );
 }

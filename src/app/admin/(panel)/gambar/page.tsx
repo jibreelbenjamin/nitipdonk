@@ -9,6 +9,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/
 import { Constants, type Enums } from "@/lib/database.types";
 import { formatBytes, formatDateTime, formatRelative } from "@/lib/format";
 import { imageStats, imageUrl } from "@/lib/images";
+import { requireAdmin } from "@/lib/session";
 import { db, must } from "@/lib/supabase";
 
 type ImageKind = Enums<"ImageKind">;
@@ -24,6 +25,8 @@ const KIND_LABEL: Record<ImageKind, string> = {
 const PAGE_SIZE = 60;
 
 export default async function AdminImagesPage({ searchParams }: PageProps<"/admin/gambar">) {
+  // Cek di halaman juga: layout tidak dirender ulang saat pindah halaman, jadi tidak cukup sendirian
+  await requireAdmin();
   const { jenis } = await searchParams;
   const kind = IMAGE_KINDS.find((value) => value === jenis);
 

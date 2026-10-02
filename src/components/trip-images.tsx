@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ImagePlusIcon, XIcon } from "lucide-react";
+import { adminAddTripImages, adminDeleteTripImage } from "@/actions/admin-trips";
 import { addTripImages, deleteTripImage } from "@/actions/trips";
 import { useActionRunner, useFormAction } from "@/hooks/use-action-feedback";
 import { MAX_TRIP_IMAGES } from "@/lib/constants";
@@ -34,17 +35,26 @@ import { Spinner } from "@/components/ui/spinner";
 
 export type TripImage = { id: string; url: string; width: number; height: number };
 
-/** Lampiran gambar titipan; pembuka titipan bisa menambah dan menghapusnya. */
+// Pembuka titipan lewat aksi biasa, admin lewat aksi admin (tanpa cek pembuka)
+const ACTIONS = {
+  host: { add: addTripImages, remove: deleteTripImage },
+  admin: { add: adminAddTripImages, remove: adminDeleteTripImage },
+};
+type Manager = keyof typeof ACTIONS;
+
+/** Lampiran gambar titipan; pembuka titipan (atau admin) bisa menambah dan menghapusnya. */
 export function TripImages({
   tripId,
   title,
   images,
   canEdit,
+  manager = "host",
 }: {
   tripId: string;
   title: string;
   images: TripImage[];
   canEdit: boolean;
+  manager?: Manager;
 }) {
   return (
     <div className="flex flex-wrap gap-2">
@@ -59,19 +69,29 @@ export function TripImages({
             height={image.height}
             className="size-20"
           />
-          {canEdit && <DeleteTripImageButton imageId={image.id} />}
+          {canEdit && <DeleteTripImageButton imageId={image.id} manager={manager} />}
         </div>
       ))}
       {/* Tetap dipasang walau sudah penuh, supaya toast sukses tetap muncul setelah slot terakhir terisi */}
-      {canEdit && <AddTripImagesDialog tripId={tripId} remaining={MAX_TRIP_IMAGES - images.length} />}
+      {canEdit && (
+        <AddTripImagesDialog tripId={tripId} remaining={MAX_TRIP_IMAGES - images.length} manager={manager} />
+      )}
     </div>
   );
 }
 
-function AddTripImagesDialog({ tripId, remaining }: { tripId: string; remaining: number }) {
+function AddTripImagesDialog({
+  tripId,
+  remaining,
+  manager,
+}: {
+  tripId: string;
+  remaining: number;
+  manager: Manager;
+}) {
   const [open, setOpen] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const { pending, onSubmit } = useFormAction(addTripImages, {
+  const { pending, onSubmit } = useFormAction(ACTIONS[manager].add, {
     success: "Gambar ditambahkan",
     onSuccess: () => setOpen(false),
   });
@@ -114,7 +134,7 @@ function AddTripImagesDialog({ tripId, remaining }: { tripId: string; remaining:
   );
 }
 
-function DeleteTripImageButton({ imageId }: { imageId: string }) {
+function DeleteTripImageButton({ imageId, manager }: { imageId: string; manager: Manager }) {
   const [pending, run] = useActionRunner();
   return (
     <AlertDialog>
@@ -137,7 +157,10 @@ function DeleteTripImageButton({ imageId }: { imageId: string }) {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Batal</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" onClick={() => run(() => deleteTripImage(imageId), "Gambar dihapus")}>
+          <AlertDialogAction
+            variant="destructive"
+            onClick={() => run(() => ACTIONS[manager].remove(imageId), "Gambar dihapus")}
+          >
             Hapus
           </AlertDialogAction>
         </AlertDialogFooter>

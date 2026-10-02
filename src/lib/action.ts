@@ -33,6 +33,23 @@ export function getFiles(formData: FormData, name: string): File[] {
   return formData.getAll(name).filter((value): value is File => value instanceof File && value.size > 0);
 }
 
+/** Daftar id dari client (mis. baris yang dipilih di tabel admin), sudah dibersihkan dari duplikat. */
+export function getIds(value: unknown, max = 500): string[] {
+  if (!Array.isArray(value)) throw new ActionError("Data tidak valid");
+  const ids = [
+    ...new Set(value.filter((id): id is string => typeof id === "string" && id.length > 0 && id.length <= 40)),
+  ];
+  if (ids.length === 0) throw new ActionError("Pilih minimal satu data");
+  if (ids.length > max) throw new ActionError(`Maksimal ${max} data sekaligus`);
+  return ids;
+}
+
+export function getPaymentMethod(formData: FormData) {
+  const value = getString(formData, "paymentMethod", 10);
+  if (value !== "CASH" && value !== "CASHLESS") throw new ActionError("Pilih metode bayar");
+  return value;
+}
+
 /** Harga opsional dalam rupiah; menerima "15000", "15.000", atau "Rp 15.000". */
 export function getPrice(formData: FormData, name: string): number | null {
   const digits = getString(formData, name, 20).replace(/\D/g, "");

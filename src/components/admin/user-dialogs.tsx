@@ -1,8 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { EllipsisVerticalIcon, PencilIcon, Trash2Icon, UserPlusIcon } from "lucide-react";
-import { createUser, deleteUser, renameUser, resetUserPin, setUserActive, setUserPin } from "@/actions/admin";
+import { EllipsisVerticalIcon, EyeIcon, EyeOffIcon, PencilIcon, Trash2Icon, UserPlusIcon } from "lucide-react";
+import {
+  createUser,
+  deleteUser,
+  renameUser,
+  resetUserPin,
+  setUserActive,
+  setUserPin,
+  setUserShowWhenInactive,
+} from "@/actions/admin";
 import { useActionRunner, useFormAction } from "@/hooks/use-action-feedback";
 import { PIN_LENGTH } from "@/lib/constants";
 import { ImageInput } from "@/components/image-input";
@@ -36,8 +44,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+  FieldTitle,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 
@@ -54,7 +72,7 @@ export function CreateUserDialog() {
       <DialogTrigger asChild>
         <Button size="sm">
           <UserPlusIcon data-icon="inline-start" />
-          Tambah
+          Tambah pengguna
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
@@ -92,7 +110,11 @@ export function CreateUserDialog() {
   );
 }
 
-export function UserRowActions({ user }: { user: { id: string; name: string } }) {
+export function UserRowActions({
+  user,
+}: {
+  user: { id: string; name: string; isActive: boolean; showWhenInactive: boolean };
+}) {
   const [dialog, setDialog] = useState<"rename" | "delete" | null>(null);
   const [pending, run] = useActionRunner();
   const close = () => setDialog(null);
@@ -106,11 +128,27 @@ export function UserRowActions({ user }: { user: { id: string; name: string } })
             {pending ? <Spinner /> : <EllipsisVerticalIcon />}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-44">
+        <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuItem onSelect={() => setDialog("rename")}>
             <PencilIcon />
             Ubah nama
           </DropdownMenuItem>
+          {/* Hanya berlaku untuk akun nonaktif: tampil abu-abu atau disembunyikan di halaman pilih akun */}
+          {!user.isActive && (
+            <DropdownMenuItem
+              onSelect={() =>
+                run(
+                  () => setUserShowWhenInactive(user.id, !user.showWhenInactive),
+                  user.showWhenInactive
+                    ? `${user.name} disembunyikan dari halaman pilih akun`
+                    : `${user.name} tampil abu-abu di halaman pilih akun`,
+                )
+              }
+            >
+              {user.showWhenInactive ? <EyeOffIcon /> : <EyeIcon />}
+              {user.showWhenInactive ? "Sembunyikan dari pilih akun" : "Tampilkan di pilih akun"}
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem variant="destructive" onSelect={() => setDialog("delete")}>
             <Trash2Icon />
@@ -165,19 +203,33 @@ export function UserRowActions({ user }: { user: { id: string; name: string } })
   );
 }
 
-/** Switch aktif per pengguna: matikan (dengan konfirmasi) untuk menonaktifkan akun, nyalakan untuk mengaktifkan lagi. */
+/**
+ * Switch aktif per pengguna: matikan (dengan konfirmasi) untuk menonaktifkan akun, nyalakan untuk
+ * mengaktifkan lagi. Saat menonaktifkan, admin memilih akun tetap tampil abu-abu atau disembunyikan.
+ */
 export function ActiveToggle({ user }: { user: { id: string; name: string; isActive: boolean } }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [visibility, setVisibility] = useState<"show" | "hide">("show");
   const [pending, run] = useActionRunner();
+  const options = [
+    {
+      value: "show",
+      title: "Tampil abu-abu",
+      description: "Masih terlihat di halaman pilih akun, tapi tidak bisa dipilih.",
+    },
+    { value: "hide", title: "Sembunyikan", description: "Tidak muncul sama sekali di halaman pilih akun." },
+  ] as const;
 
   return (
     <>
       <Switch
         checked={user.isActive}
         disabled={pending}
-        onCheckedChange={(checked) =>
-          checked ? run(() => setUserActive(user.id, true), `${user.name} diaktifkan`) : setConfirmOpen(true)
-        }
+        onCheckedChange={(checked) => {
+          if (checked) return run(() => setUserActive(user.id, true), `${user.name} diaktifkan`);
+          setVisibility("show");
+          setConfirmOpen(true);
+        }}
         aria-label={`Akun ${user.name} aktif`}
       />
 
@@ -186,15 +238,33 @@ export function ActiveToggle({ user }: { user: { id: string; name: string; isAct
           <AlertDialogHeader>
             <AlertDialogTitle>Nonaktifkan {user.name}?</AlertDialogTitle>
             <AlertDialogDescription>
-              {user.name} langsung keluar dari semua perangkat dan tidak muncul di halaman pilih akun. Titipan
-              dan pesanannya tetap tersimpan, dan akun bisa diaktifkan lagi kapan saja.
+              {user.name} langsung keluar dari semua perangkat dan tidak bisa dipakai. Titipan dan pesanannya
+              tetap tersimpan, dan akun bisa diaktifkan lagi kapan saja.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <FieldSet>
+            <FieldLegend variant="label">Di halaman pilih akun</FieldLegend>
+            <RadioGroup value={visibility} onValueChange={(value) => setVisibility(value as "show" | "hide")}>
+              {options.map((option) => (
+                <FieldLabel key={option.value} htmlFor={`inactive-${option.value}-${user.id}`}>
+                  <Field orientation="horizontal">
+                    <FieldContent>
+                      <FieldTitle>{option.title}</FieldTitle>
+                      <FieldDescription>{option.description}</FieldDescription>
+                    </FieldContent>
+                    <RadioGroupItem value={option.value} id={`inactive-${option.value}-${user.id}`} />
+                  </Field>
+                </FieldLabel>
+              ))}
+            </RadioGroup>
+          </FieldSet>
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              onClick={() => run(() => setUserActive(user.id, false), `${user.name} dinonaktifkan`)}
+              onClick={() =>
+                run(() => setUserActive(user.id, false, visibility === "show"), `${user.name} dinonaktifkan`)
+              }
             >
               Nonaktifkan
             </AlertDialogAction>

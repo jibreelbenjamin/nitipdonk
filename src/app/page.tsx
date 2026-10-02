@@ -15,11 +15,13 @@ import { db, must } from "@/lib/supabase";
 export default async function HomePage() {
   if (await getCurrentUser()) redirect("/titipan");
 
+  // Akun nonaktif ikut tampil (abu-abu, di bagian akhir) kecuali admin menyembunyikannya
   const users = must(
     await db()
       .from("User")
-      .select("id, name, pinHash, avatar:Image!User_avatarId_fkey(path)")
-      .eq("isActive", true)
+      .select("id, name, pinHash, isActive, avatar:Image!User_avatarId_fkey(path)")
+      .or("isActive.eq.true,showWhenInactive.eq.true")
+      .order("isActive", { ascending: false })
       .order("name"),
   );
   const profiles = users.map((user) => ({
@@ -27,6 +29,7 @@ export default async function HomePage() {
     name: user.name,
     avatarUrl: imageUrl(user.avatar),
     hasPin: Boolean(user.pinHash),
+    isActive: user.isActive,
   }));
 
   return (

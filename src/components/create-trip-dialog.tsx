@@ -7,6 +7,7 @@ import { useFormAction } from "@/hooks/use-action-feedback";
 import { MAX_CLOSE_MINUTES, MAX_TRIP_IMAGES } from "@/lib/constants";
 import { MultiImageInput } from "@/components/multi-image-input";
 import { SubmitButton } from "@/components/submit-button";
+import { type UserOption, UserSelect } from "@/components/user-select";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,14 +24,26 @@ import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
 import { Textarea } from "@/components/ui/textarea";
 
-export function CreateTripDialog() {
-  const { pending, onSubmit } = useFormAction(createTrip, { navigates: true });
+/**
+ * Form "Buka titipan". Dengan `hosts` (dipakai admin), pembuka titipan dipilih dari daftar
+ * pengguna dan form dikirim ke `action` yang diberikan.
+ */
+export function CreateTripDialog({
+  hosts,
+  action = createTrip,
+  size,
+}: {
+  hosts?: UserOption[];
+  action?: typeof createTrip;
+  size?: "sm" | "default";
+}) {
+  const { pending, onSubmit } = useFormAction(action, { navigates: true });
   const [processing, setProcessing] = useState(false);
 
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button>
+        <Button size={size}>
           <PlusIcon data-icon="inline-start" />
           Buka titipan
         </Button>
@@ -41,13 +54,28 @@ export function CreateTripDialog() {
             <DialogHeader>
               <DialogTitle>Buka titipan</DialogTitle>
               <DialogDescription>
-                Mau jalan beli sesuatu? Kabari yang lain biar bisa sekalian titip.
+                {hosts
+                  ? "Buka titipan atas nama salah satu pengguna."
+                  : "Mau jalan beli sesuatu? Kabari yang lain biar bisa sekalian titip."}
               </DialogDescription>
             </DialogHeader>
             <FieldGroup>
+              {hosts && (
+                <Field>
+                  <FieldLabel htmlFor="trip-host">Pembuka titipan</FieldLabel>
+                  <UserSelect id="trip-host" name="hostId" users={hosts} placeholder="Pilih pengguna" />
+                </Field>
+              )}
               <Field>
                 <FieldLabel htmlFor="trip-title">Beli di mana / apa?</FieldLabel>
-                <Input id="trip-title" name="title" placeholder="Mixue depan kantor" maxLength={80} required autoFocus />
+                <Input
+                  id="trip-title"
+                  name="title"
+                  placeholder="Mixue depan kantor"
+                  maxLength={80}
+                  required
+                  autoFocus={!hosts}
+                />
               </Field>
               <Field>
                 <FieldLabel htmlFor="trip-note">Catatan</FieldLabel>

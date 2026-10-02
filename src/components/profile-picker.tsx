@@ -7,12 +7,14 @@ import { toast } from "sonner";
 import { signIn } from "@/actions/auth";
 import { PIN_LENGTH } from "@/lib/constants";
 import { startNavigation } from "@/lib/navigation-progress";
+import { cn } from "@/lib/utils";
 import { PinInput } from "@/components/pin-input";
 import { SubmitButton } from "@/components/submit-button";
 import { UserAvatar } from "@/components/user-avatar";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -22,13 +24,14 @@ import {
 import { Field, FieldError } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 
-export type Profile = { id: string; name: string; avatarUrl?: string; hasPin: boolean };
+export type Profile = { id: string; name: string; avatarUrl?: string; hasPin: boolean; isActive: boolean };
 
 export function ProfilePicker({ profiles }: { profiles: Profile[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [pinProfile, setPinProfile] = useState<Profile | null>(null);
+  const [inactiveProfile, setInactiveProfile] = useState<Profile | null>(null);
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -53,6 +56,8 @@ export function ProfilePicker({ profiles }: { profiles: Profile[] }) {
   }
 
   function choose(profile: Profile) {
+    // Akun nonaktif tidak bisa dipakai; cukup jelaskan alasannya
+    if (!profile.isActive) return setInactiveProfile(profile);
     if (!profile.hasPin) return enter(profile);
     setPin("");
     setError(null);
@@ -66,12 +71,17 @@ export function ProfilePicker({ profiles }: { profiles: Profile[] }) {
           <Button
             key={profile.id}
             variant="ghost"
-            className="h-auto flex-col gap-3 p-4"
+            className={cn("h-auto flex-col gap-3 p-4", !profile.isActive && "text-muted-foreground")}
             disabled={pending}
             onClick={() => choose(profile)}
+            aria-label={profile.isActive ? undefined : `${profile.name} (akun dinonaktifkan)`}
           >
             <span className="relative">
-              <UserAvatar name={profile.name} src={profile.avatarUrl} className="size-20 text-xl" />
+              <UserAvatar
+                name={profile.name}
+                src={profile.avatarUrl}
+                className={cn("size-20 text-xl", !profile.isActive && "opacity-50 grayscale")}
+              />
               {pendingId === profile.id && !pinProfile && (
                 <span className="absolute inset-0 flex items-center justify-center rounded-full bg-background/70">
                   <Spinner />
@@ -80,11 +90,37 @@ export function ProfilePicker({ profiles }: { profiles: Profile[] }) {
             </span>
             <span className="flex max-w-full items-center gap-1">
               <span className="truncate">{profile.name}</span>
-              {profile.hasPin && <LockIcon className="size-3.5 text-muted-foreground" />}
+              {profile.hasPin && profile.isActive && <LockIcon className="size-3.5 text-muted-foreground" />}
             </span>
           </Button>
         ))}
       </div>
+
+      <Dialog open={Boolean(inactiveProfile)} onOpenChange={(open) => !open && setInactiveProfile(null)}>
+        <DialogContent className="sm:max-w-sm">
+          {inactiveProfile && (
+            <>
+              <DialogHeader className="items-center text-center">
+                <UserAvatar
+                  name={inactiveProfile.name}
+                  src={inactiveProfile.avatarUrl}
+                  className="mb-2 size-16 opacity-50 grayscale"
+                />
+                <DialogTitle>Akun dinonaktifkan</DialogTitle>
+                <DialogDescription>
+                  Akun {inactiveProfile.name} sedang dinonaktifkan admin, jadi belum bisa dipakai. Hubungi admin
+                  kalau akun ini perlu diaktifkan lagi.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button className="w-full">Mengerti</Button>
+                </DialogClose>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={Boolean(pinProfile)} onOpenChange={(open) => !open && setPinProfile(null)}>
         <DialogContent className="sm:max-w-sm">

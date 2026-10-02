@@ -23,24 +23,26 @@ enum TripStatus {
 }
 
 model User {
-  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  name           String
-  avatarId       String?   @unique
-  avatar         Image?    @relation("UserAvatar", fields: [avatarId], references: [id], onDelete: SetNull)
+  id               String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name             String
+  avatarId         String?   @unique
+  avatar           Image?    @relation("UserAvatar", fields: [avatarId], references: [id], onDelete: SetNull)
   // Info pembayaran: teks (no. rekening / e-wallet) dan/atau gambar (QRIS)
-  paymentInfo    String?
-  paymentQrId    String?   @unique
-  paymentQr      Image?    @relation("UserPaymentQr", fields: [paymentQrId], references: [id], onDelete: SetNull)
+  paymentInfo      String?
+  paymentQrId      String?   @unique
+  paymentQr        Image?    @relation("UserPaymentQr", fields: [paymentQrId], references: [id], onDelete: SetNull)
   // PIN opsional; null = akun terbuka tanpa PIN
-  pinHash        String?
-  pinFailedCount Int       @default(0)
-  pinLockedUntil DateTime? @db.Timestamptz(3)
+  pinHash          String?
+  pinFailedCount   Int       @default(0)
+  pinLockedUntil   DateTime? @db.Timestamptz(3)
   // Dinaikkan setiap PIN berubah supaya sesi lama di perangkat lain ikut keluar
-  sessionVersion Int       @default(0)
-  // Dinonaktifkan admin: tidak muncul di halaman pilih akun dan tidak bisa dipakai, data tetap ada
-  isActive       Boolean   @default(true)
-  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
-  updatedAt      DateTime  @default(now()) @updatedAt @db.Timestamptz(3)
+  sessionVersion   Int       @default(0)
+  // Dinonaktifkan admin: tidak bisa dipakai, data tetap ada
+  isActive         Boolean   @default(true)
+  // Saat nonaktif: tetap tampil abu-abu di halaman pilih akun (true) atau disembunyikan (false)
+  showWhenInactive Boolean   @default(true)
+  createdAt        DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime  @default(now()) @updatedAt @db.Timestamptz(3)
 
   trips  Trip[]
   orders Order[]

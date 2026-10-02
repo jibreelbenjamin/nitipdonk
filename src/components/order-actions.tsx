@@ -160,9 +160,18 @@ function EditOrderForm({
   );
 }
 
-function UploadProofForm({ orderId, onDone }: { orderId: string; onDone: () => void }) {
+/** Form upload / ganti bukti bayar; admin memakai `action` sendiri. */
+export function UploadProofForm({
+  orderId,
+  onDone,
+  action = uploadProof,
+}: {
+  orderId: string;
+  onDone: () => void;
+  action?: typeof uploadProof;
+}) {
   const [processing, setProcessing] = useState(false);
-  const { pending, onSubmit } = useFormAction(uploadProof, { success: "Bukti bayar diupload", onSuccess: onDone });
+  const { pending, onSubmit } = useFormAction(action, { success: "Bukti bayar diupload", onSuccess: onDone });
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6">

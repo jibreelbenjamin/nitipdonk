@@ -5,6 +5,7 @@ import {
   ActionError,
   type ActionResult,
   getFile,
+  getPaymentMethod,
   getPrice,
   getString,
   runAction,
@@ -12,15 +13,8 @@ import {
 import { deleteImages, saveImage } from "@/lib/images";
 import { requireUser } from "@/lib/session";
 import { db, must } from "@/lib/supabase";
+import { deleteOrdersWithFiles } from "@/lib/trip-data";
 import { isAcceptingOrders } from "@/lib/trips";
-
-function getPaymentMethod(formData: FormData) {
-  const value = getString(formData, "paymentMethod", 10);
-  if (value !== "CASH" && value !== "CASHLESS") {
-    throw new ActionError("Pilih metode bayar");
-  }
-  return value;
-}
 
 async function findOrder(orderId: string) {
   const order = must(
@@ -149,8 +143,7 @@ export async function deleteOrder(orderId: string) {
     }
     if (order.trip.status === "DONE") throw new ActionError("Titipan sudah selesai");
 
-    await deleteImages([order.proofId]);
-    must(await db().from("Order").delete().eq("id", order.id));
+    await deleteOrdersWithFiles([order.id]);
   });
   refresh();
   return result;

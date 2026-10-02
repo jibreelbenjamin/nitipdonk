@@ -6,8 +6,20 @@ import { setOrderPaid } from "@/actions/orders";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
-/** Switch untuk pembuka titipan menandai pesanan lunas, ada bukti bayar atau tidak. */
-export function PaidToggle({ orderId, isPaid }: { orderId: string; isPaid: boolean }) {
+type Result = { ok: true } | { ok: false; error: string };
+
+/** Switch untuk pembuka titipan (atau admin lewat `action`) menandai pesanan lunas, ada bukti bayar atau tidak. */
+export function PaidToggle({
+  orderId,
+  isPaid,
+  action = setOrderPaid,
+  label = "Lunas",
+}: {
+  orderId: string;
+  isPaid: boolean;
+  action?: (orderId: string, isPaid: boolean) => Promise<Result>;
+  label?: string;
+}) {
   const [pending, startTransition] = useTransition();
   // Langsung berubah saat diklik; kembali otomatis kalau server menolak
   const [optimisticPaid, setOptimisticPaid] = useOptimistic(isPaid);
@@ -16,7 +28,7 @@ export function PaidToggle({ orderId, isPaid }: { orderId: string; isPaid: boole
   function toggle(checked: boolean) {
     startTransition(async () => {
       setOptimisticPaid(checked);
-      const result = await setOrderPaid(orderId, checked);
+      const result = await action(orderId, checked);
       if (!result.ok) toast.error(result.error);
     });
   }
@@ -25,7 +37,7 @@ export function PaidToggle({ orderId, isPaid }: { orderId: string; isPaid: boole
     <div className="flex items-center gap-1.5">
       <Switch id={id} size="sm" checked={optimisticPaid} disabled={pending} onCheckedChange={toggle} />
       <Label htmlFor={id} className="text-xs font-normal">
-        Lunas
+        {label}
       </Label>
     </div>
   );

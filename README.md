@@ -29,6 +29,13 @@ dari komputer developer, jadi deployment tidak butuh connection string database.
   pengguna, statistik storage, hapus gambar per item atau massal berdasarkan umur, ganti
   password admin. Password disimpan sebagai hash scrypt di tabel `Setting`; mengganti password
   mengeluarkan sesi admin di perangkat lain.
+- **Admin – kelola titipan** (`/admin/titipan`): akses penuh ke semua titipan lewat data table
+  (shadcn + TanStack Table: cari, filter, urutkan, pilih banyak, atur kolom, paginasi). Admin bisa
+  membuka titipan atas nama siapa pun, mengubah semua datanya (pembuka, judul, catatan, status,
+  jam tutup), mengelola lampiran, serta menambah / mengubah / menandai lunas / mengganti bukti /
+  menghapus pesanan siapa pun — termasuk di titipan yang sudah ditutup — satu per satu atau massal.
+- **Akun nonaktif** tampil abu-abu di halaman pilih akun; diklik muncul info bahwa akun
+  dinonaktifkan. Saat menonaktifkan, admin bisa memilih akun tetap tampil abu-abu atau disembunyikan.
 - **Kompresi gambar**: foto dikecilkan dulu di browser (maks 1600px), lalu server
   mengompres ulang ke WebP dengan `sharp` sebelum masuk storage:
 
@@ -103,8 +110,9 @@ deploy di tempat lain, panggil endpoint cron dari penjadwal apa pun dengan heade
 
 ```
 prisma/                 schema & migrasi
-src/actions/            server actions (auth, trips, orders, profile, admin)
+src/actions/            server actions (auth, trips, orders, profile, admin, admin-trips)
 src/lib/                klien Supabase + tipe database, sesi & PIN, storage, kompresi gambar
-src/app/                halaman: /, /titipan, /titipan/[id], /pengaturan, /admin, /admin/gambar
-src/components/         komponen aplikasi; src/components/ui berisi komponen shadcn
+src/app/                halaman: /, /titipan, /titipan/[id], /pengaturan, /admin, /admin/titipan, /admin/gambar
+src/components/         komponen aplikasi; src/components/ui berisi komponen shadcn,
+                        src/components/data-table komponen data table (pola Data Table shadcn)
 ```

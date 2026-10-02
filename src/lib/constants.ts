@@ -15,6 +15,8 @@ export const MAX_TRIP_IMAGES = 5;
 export const MAX_CLOSE_MINUTES = 24 * 60;
 
 export const TIME_ZONE = "Asia/Jakarta";
+// Selisih TIME_ZONE dari UTC; Asia/Jakarta tidak memakai daylight saving, jadi selalu tetap
+export const TIME_ZONE_OFFSET = "+07:00";
 
 // Saran unduh aplikasi di browser HP: setelah "Nanti saja", baru muncul lagi
 // saat cookie ini kedaluwarsa

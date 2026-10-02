@@ -7,6 +7,14 @@ export function isAcceptingOrders(trip: TripState, now = new Date()) {
   return trip.status === "OPEN" && (!trip.closesAt || new Date(trip.closesAt) > now);
 }
 
+/** Status yang dilihat orang: OPEN yang sudah lewat jam tutup dibedakan jadi EXPIRED. */
+export type TripPhase = "OPEN" | "EXPIRED" | "CLOSED" | "DONE";
+
+export function tripPhase(trip: TripState, now = new Date()): TripPhase {
+  if (trip.status !== "OPEN") return trip.status;
+  return isAcceptingOrders(trip, now) ? "OPEN" : "EXPIRED";
+}
+
 export function liveSince(now = new Date()) {
   return new Date(now.getTime() - LIVE_WINDOW_HOURS * 60 * 60 * 1000);
 }
