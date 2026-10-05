@@ -20,6 +20,7 @@ export default async function HomePage() {
     await db()
       .from("User")
       .select("id, name, pinHash, isActive, avatar:Image!User_avatarId_fkey(path)")
+      .eq("isAdmin", false)
       .or("isActive.eq.true,showWhenInactive.eq.true")
       .order("isActive", { ascending: false })
       .order("name"),

@@ -69,9 +69,9 @@ const STATUS_ACTIONS: { status: TripStatus; label: string; done: string; icon: t
 
 const searchText = (trip: AdminTripRow) => `${trip.title} ${trip.note ?? ""} ${trip.host.name}`;
 
-// Daftar pengguna untuk dialog ubah titipan. Lewat context (bukan dari luar kolom) supaya definisi
+// Pilihan pembuka titipan (akun Admin + pengguna) untuk dialog ubah titipan. Lewat context (bukan dari luar kolom) supaya definisi
 // kolom tetap sama; kalau kolom dibuat ulang, isi sel ikut dipasang ulang setiap data dimuat ulang.
-const UsersContext = createContext<UserOption[]>([]);
+const HostsContext = createContext<UserOption[]>([]);
 
 const columns: ColumnDef<AdminTripRow>[] = [
   selectColumn<AdminTripRow>(),
@@ -166,13 +166,13 @@ const columns: ColumnDef<AdminTripRow>[] = [
 ];
 
 /** Semua titipan untuk admin: cari, filter, urutkan, ubah, ubah status, dan hapus (satu atau banyak). */
-export function AdminTripsTable({ trips, users }: { trips: AdminTripRow[]; users: UserOption[] }) {
-  const hosts = [...new Map(trips.map((trip) => [trip.host.id, trip.host])).values()].sort((a, b) =>
+export function AdminTripsTable({ trips, hosts }: { trips: AdminTripRow[]; hosts: UserOption[] }) {
+  const tripHosts = [...new Map(trips.map((trip) => [trip.host.id, trip.host])).values()].sort((a, b) =>
     a.name.localeCompare(b.name, "id"),
   );
 
   return (
-    <UsersContext value={users}>
+    <HostsContext value={hosts}>
       <DataTable
         columns={columns}
         data={trips}
@@ -189,17 +189,17 @@ export function AdminTripsTable({ trips, users }: { trips: AdminTripRow[]; users
               {
                 column: "host",
                 title: "Pembuka",
-                options: hosts.map((host) => ({ value: host.id, label: host.name })),
+                options: tripHosts.map((host) => ({ value: host.id, label: host.name })),
               },
             ]}
-            actions={<CreateTripDialog hosts={users} action={adminCreateTrip} size="sm" />}
+            actions={<CreateTripDialog hosts={hosts} action={adminCreateTrip} size="sm" />}
             selectionActions={(rows) => (
               <TripBulkActions tripIds={rows.map((row) => row.original.id)} onDone={() => table.resetRowSelection()} />
             )}
           />
         )}
       />
-    </UsersContext>
+    </HostsContext>
   );
 }
 
@@ -249,7 +249,7 @@ function TripBulkActions({ tripIds, onDone }: { tripIds: string[]; onDone: () =>
 }
 
 function TripRowActions({ trip }: { trip: AdminTripRow }) {
-  const users = use(UsersContext);
+  const hosts = use(HostsContext);
   const [pending, run] = useActionRunner();
   const [dialog, setDialog] = useState<"edit" | "delete" | null>(null);
   const phase = tripPhase(trip);
@@ -296,7 +296,7 @@ function TripRowActions({ trip }: { trip: AdminTripRow }) {
 
       <EditTripDialog
         trip={{ ...trip, hostId: trip.host.id }}
-        users={users}
+        users={hosts}
         open={dialog === "edit"}
         onOpenChange={(open) => setDialog(open ? "edit" : null)}
       />

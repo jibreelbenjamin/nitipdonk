@@ -5,7 +5,8 @@ import { adminUpdateTrip } from "@/actions/admin-trips";
 import { useFormAction } from "@/hooks/use-action-feedback";
 import { toDateTimeLocal } from "@/lib/format";
 import { SubmitButton } from "@/components/submit-button";
-import { type UserOption, UserSelect } from "@/components/user-select";
+import { UserCombobox } from "@/components/user-combobox";
+import type { UserOption } from "@/components/user-select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -86,7 +87,7 @@ function EditTripForm({ trip, users, onDone }: { trip: EditableTrip; users: User
         <FieldGroup>
           <Field>
             <FieldLabel htmlFor={id("host")}>Pembuka titipan</FieldLabel>
-            <UserSelect id={id("host")} name="hostId" users={users} defaultValue={trip.hostId} />
+            <UserCombobox id={id("host")} name="hostId" users={users} defaultValue={trip.hostId} />
           </Field>
           <Field>
             <FieldLabel htmlFor={id("title")}>Beli di mana / apa?</FieldLabel>

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { type AdminTripRow, AdminTripsTable } from "@/components/admin/trips-table";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getUserOptions } from "@/lib/admin-data";
+import { getHostOptions } from "@/lib/admin-data";
 import { imageUrl } from "@/lib/images";
 import { requireAdmin } from "@/lib/session";
 import { db, must } from "@/lib/supabase";
@@ -35,7 +35,7 @@ async function allTrips() {
 export default async function AdminTripsPage() {
   // Cek di halaman juga: layout tidak dirender ulang saat pindah halaman, jadi tidak cukup sendirian
   await requireAdmin();
-  const [trips, users] = await Promise.all([allTrips(), getUserOptions()]);
+  const [trips, hosts] = await Promise.all([allTrips(), getHostOptions()]);
 
   const rows: AdminTripRow[] = trips.map((trip) => ({
     id: trip.id,
@@ -69,7 +69,7 @@ export default async function AdminTripsPage() {
         <StatCard label="Pesanan" value={orders} />
         <StatCard label="Belum lunas" value={unpaid} hint="Pesanan yang belum ditandai lunas" />
       </div>
-      <AdminTripsTable trips={rows} users={users} />
+      <AdminTripsTable trips={rows} hosts={hosts} />
     </>
   );
 }

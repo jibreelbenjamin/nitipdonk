@@ -11,7 +11,7 @@ import { UserAvatar } from "@/components/user-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { getUserOptions } from "@/lib/admin-data";
+import { getHostOptions } from "@/lib/admin-data";
 import { formatDateTime } from "@/lib/format";
 import { imageUrl } from "@/lib/images";
 import { requireAdmin } from "@/lib/session";
@@ -22,7 +22,7 @@ export default async function AdminTripPage({ params }: PageProps<"/admin/titipa
   // Cek di halaman juga: layout tidak dirender ulang saat pindah halaman, jadi tidak cukup sendirian
   await requireAdmin();
   const { id } = await params;
-  const [tripResult, users] = await Promise.all([
+  const [tripResult, hosts] = await Promise.all([
     db()
       .from("Trip")
       .select(
@@ -35,10 +35,12 @@ export default async function AdminTripPage({ params }: PageProps<"/admin/titipa
       .order("createdAt", { referencedTable: "orders" })
       .order("createdAt", { referencedTable: "images" })
       .maybeSingle(),
-    getUserOptions(),
+    getHostOptions(),
   ]);
   const trip = must(tripResult);
   if (!trip) notFound();
+  // Akun Admin hanya bisa jadi pembuka titipan, bukan pemesan
+  const users = hosts.filter((user) => !user.isAdmin);
 
   const orders: AdminOrderRow[] = trip.orders.map((order) => ({
     id: order.id,
@@ -114,7 +116,7 @@ export default async function AdminTripPage({ params }: PageProps<"/admin/titipa
               closesAt: trip.closesAt,
             }}
             accepting={isAcceptingOrders(trip)}
-            users={users}
+            users={hosts}
           />
         </CardFooter>
       </Card>

@@ -61,8 +61,8 @@ export const getCurrentUser = cache(async () => {
       .eq("id", id)
       .maybeSingle(),
   );
-  // Akun yang dinonaktifkan admin langsung dianggap keluar
-  if (!user || !user.isActive || user.sessionVersion !== Number(version)) return null;
+  // Akun yang dinonaktifkan admin langsung dianggap keluar; akun Admin tidak pernah punya sesi pengguna
+  if (!user || !user.isActive || user.isAdmin || user.sessionVersion !== Number(version)) return null;
   return user;
 });
 

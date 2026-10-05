@@ -31,9 +31,12 @@ dari komputer developer, jadi deployment tidak butuh connection string database.
   mengeluarkan sesi admin di perangkat lain.
 - **Admin – kelola titipan** (`/admin/titipan`): akses penuh ke semua titipan lewat data table
   (shadcn + TanStack Table: cari, filter, urutkan, pilih banyak, atur kolom, paginasi). Admin bisa
-  membuka titipan atas nama siapa pun, mengubah semua datanya (pembuka, judul, catatan, status,
+  membuka titipan atas nama sendiri (akun khusus **Admin**) atau siapa pun — pembuka dipilih lewat
+  combobox yang bisa dicari — mengubah semua datanya (pembuka, judul, catatan, status,
   jam tutup), mengelola lampiran, serta menambah / mengubah / menandai lunas / mengganti bukti /
   menghapus pesanan siapa pun — termasuk di titipan yang sudah ditutup — satu per satu atau massal.
+- **Akun Admin** (dibuat oleh migrasi) hanya dipakai sebagai pembuka titipan dari dashboard admin: tidak
+  tampil di halaman pilih akun maupun daftar pengguna, dan tidak bisa dipakai masuk.
 - **Akun nonaktif** tampil abu-abu di halaman pilih akun; diklik muncul info bahwa akun
   dinonaktifkan. Saat menonaktifkan, admin bisa memilih akun tetap tampil abu-abu atau disembunyikan.
 - **Kompresi gambar**: foto dikecilkan dulu di browser (maks 1600px), lalu server

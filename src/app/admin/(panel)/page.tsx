@@ -12,6 +12,8 @@ export default async function AdminUsersPage() {
       .select(
         "id, name, pinHash, isActive, showWhenInactive, createdAt, avatar:Image!User_avatarId_fkey(path), trips:Trip(count), orders:Order(count)",
       )
+      // Akun Admin (pembuka titipan milik admin) tidak dikelola di sini
+      .eq("isAdmin", false)
       .order("name"),
   );
   const rows: AdminUserRow[] = users.map((user) => ({

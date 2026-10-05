@@ -7,7 +7,8 @@ import { useFormAction } from "@/hooks/use-action-feedback";
 import { MAX_CLOSE_MINUTES, MAX_TRIP_IMAGES } from "@/lib/constants";
 import { MultiImageInput } from "@/components/multi-image-input";
 import { SubmitButton } from "@/components/submit-button";
-import { type UserOption, UserSelect } from "@/components/user-select";
+import { UserCombobox } from "@/components/user-combobox";
+import type { UserOption } from "@/components/user-select";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -55,7 +56,7 @@ export function CreateTripDialog({
               <DialogTitle>Buka titipan</DialogTitle>
               <DialogDescription>
                 {hosts
-                  ? "Buka titipan atas nama salah satu pengguna."
+                  ? "Buka titipan atas nama admin atau salah satu pengguna."
                   : "Mau jalan beli sesuatu? Kabari yang lain biar bisa sekalian titip."}
               </DialogDescription>
             </DialogHeader>
@@ -63,7 +64,13 @@ export function CreateTripDialog({
               {hosts && (
                 <Field>
                   <FieldLabel htmlFor="trip-host">Pembuka titipan</FieldLabel>
-                  <UserSelect id="trip-host" name="hostId" users={hosts} placeholder="Pilih pengguna" />
+                  <UserCombobox
+                    id="trip-host"
+                    name="hostId"
+                    users={hosts}
+                    defaultValue={hosts.find((host) => host.isAdmin)?.id}
+                    placeholder="Pilih pembuka titipan"
+                  />
                 </Field>
               )}
               <Field>

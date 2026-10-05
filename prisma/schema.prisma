@@ -41,6 +41,8 @@ model User {
   isActive         Boolean   @default(true)
   // Saat nonaktif: tetap tampil abu-abu di halaman pilih akun (true) atau disembunyikan (false)
   showWhenInactive Boolean   @default(true)
+  // Akun khusus "Admin" untuk titipan yang dibuka admin; tidak tampil di pilih akun & tidak bisa masuk
+  isAdmin          Boolean   @default(false)
   createdAt        DateTime  @default(now()) @db.Timestamptz(3)
   updatedAt        DateTime  @default(now()) @updatedAt @db.Timestamptz(3)
 

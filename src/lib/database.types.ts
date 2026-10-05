@@ -218,6 +218,7 @@ export type Database = {
           createdAt: string
           id: string
           isActive: boolean
+          isAdmin: boolean
           name: string
           paymentInfo: string | null
           paymentQrId: string | null
@@ -233,6 +234,7 @@ export type Database = {
           createdAt?: string
           id?: string
           isActive?: boolean
+          isAdmin?: boolean
           name: string
           paymentInfo?: string | null
           paymentQrId?: string | null
@@ -248,6 +250,7 @@ export type Database = {
           createdAt?: string
           id?: string
           isActive?: boolean
+          isAdmin?: boolean
           name?: string
           paymentInfo?: string | null
           paymentQrId?: string | null

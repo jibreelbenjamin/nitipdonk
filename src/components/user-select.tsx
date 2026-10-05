@@ -4,9 +4,16 @@ import { useState } from "react";
 import { UserAvatar } from "@/components/user-avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export type UserOption = { id: string; name: string; isActive: boolean; avatarUrl?: string };
+export type UserOption = {
+  id: string;
+  name: string;
+  isActive: boolean;
+  avatarUrl?: string;
+  /** Akun khusus "Admin" (pembuka titipan yang dibuka admin). */
+  isAdmin?: boolean;
+};
 
-/** Pilih pengguna (pembuka titipan / pemesan); nilainya ikut terkirim lewat field `name`. */
+/** Pilih pengguna (pemesan); nilainya ikut terkirim lewat field `name`. Pembuka titipan memakai UserCombobox. */
 export function UserSelect({
   id,
   name,
