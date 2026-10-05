@@ -1,16 +1,27 @@
 "use client";
 
+import { useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { CircleCheckIcon, CircleOffIcon, LockIcon, LockOpenIcon } from "lucide-react";
-import { ActiveToggle, CreateUserDialog, PinToggle, UserRowActions } from "@/components/admin/user-dialogs";
-import { DataTable } from "@/components/data-table/data-table";
+import { setUsersActive } from "@/actions/admin";
+import {
+  ActiveToggle,
+  CreateUserDialog,
+  DeactivateDialog,
+  PinToggle,
+  UserRowActions,
+} from "@/components/admin/user-dialogs";
+import { DataTable, selectColumn } from "@/components/data-table/data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import type { FacetOption } from "@/components/data-table/data-table-faceted-filter";
 import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
 import { UserAvatar } from "@/components/user-avatar";
+import { useActionRunner } from "@/hooks/use-action-feedback";
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 
 export type AdminUserRow = {
   id: string;
@@ -36,6 +47,7 @@ const PIN_STATES: FacetOption[] = [
 const searchText = (user: AdminUserRow) => user.name;
 
 const columns: ColumnDef<AdminUserRow>[] = [
+  selectColumn<AdminUserRow>(),
   {
     id: "name",
     accessorFn: (user) => user.name,
@@ -103,7 +115,7 @@ const columns: ColumnDef<AdminUserRow>[] = [
   },
 ];
 
-/** Semua akun untuk admin: cari, filter, aktif/nonaktif, PIN, ubah nama, dan hapus. */
+/** Semua akun untuk admin: cari, filter, aktif/nonaktif (satu atau massal), PIN, ubah nama, dan hapus. */
 export function AdminUsersTable({ users }: { users: AdminUserRow[] }) {
   return (
     <DataTable
@@ -122,8 +134,43 @@ export function AdminUsersTable({ users }: { users: AdminUserRow[] }) {
             { column: "pin", title: "PIN", options: PIN_STATES },
           ]}
           actions={<CreateUserDialog />}
+          selectionActions={(rows) => (
+            <UserBulkActions userIds={rows.map((row) => row.original.id)} onDone={() => table.resetRowSelection()} />
+          )}
         />
       )}
     />
+  );
+}
+
+function UserBulkActions({ userIds, onDone }: { userIds: string[]; onDone: () => void }) {
+  const [pending, run] = useActionRunner();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const count = userIds.length;
+
+  return (
+    <>
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={pending}
+        onClick={() => run(() => setUsersActive(userIds, true), `${count} akun diaktifkan`, onDone)}
+      >
+        {pending ? <Spinner data-icon="inline-start" /> : <CircleCheckIcon data-icon="inline-start" />}
+        Aktifkan
+      </Button>
+      <Button variant="destructive" size="sm" disabled={pending} onClick={() => setConfirmOpen(true)}>
+        <CircleOffIcon data-icon="inline-start" />
+        Nonaktifkan
+      </Button>
+      <DeactivateDialog
+        id="bulk"
+        title={`Nonaktifkan ${count} akun?`}
+        description="Akun yang dipilih langsung keluar dari semua perangkat dan tidak bisa dipakai. Titipan dan pesanannya tetap tersimpan, dan akun bisa diaktifkan lagi kapan saja."
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        onConfirm={(show) => run(() => setUsersActive(userIds, false, show), `${count} akun dinonaktifkan`, onDone)}
+      />
+    </>
   );
 }

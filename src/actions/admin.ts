@@ -2,7 +2,7 @@
 
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
-import { ActionError, type ActionResult, getFile, getString, runAction } from "@/lib/action";
+import { ActionError, type ActionResult, getFile, getIds, getString, runAction } from "@/lib/action";
 import { ADMIN_PASSWORD_MIN_LENGTH, PIN_LENGTH } from "@/lib/constants";
 import { Constants } from "@/lib/database.types";
 import { cleanupOldImages, deleteImages, saveImage } from "@/lib/images";
@@ -16,6 +16,7 @@ import {
   setAdminSession,
 } from "@/lib/session";
 import { db, must } from "@/lib/supabase";
+import { chunks } from "@/lib/trip-data";
 
 export async function adminLogin(_prev: ActionResult | null, formData: FormData) {
   const result = await runAction(async () => {
@@ -127,26 +128,37 @@ export async function setUserPin(_prev: ActionResult | null, formData: FormData)
 }
 
 /**
- * Akun nonaktif keluar dari semua perangkat dan tidak bisa dipilih, tapi titipan & pesanannya tetap ada.
- * `showWhenInactive`: tetap tampil abu-abu di halaman pilih akun, atau disembunyikan.
+ * Aktifkan / nonaktifkan satu atau beberapa akun. Akun nonaktif keluar dari semua perangkat dan tidak
+ * bisa dipilih, tapi titipan & pesanannya tetap ada. `showWhenInactive`: tetap tampil abu-abu di halaman
+ * pilih akun, atau disembunyikan.
  */
-export async function setUserActive(userId: string, isActive: boolean, showWhenInactive = true) {
+export async function setUsersActive(userIds: string[], isActive: boolean, showWhenInactive = true) {
   const result = await runAction(async () => {
     await requireAdmin();
     if (typeof isActive !== "boolean" || typeof showWhenInactive !== "boolean") {
       throw new ActionError("Data tidak valid");
     }
-    const user = must(await db().from("User").select("id, sessionVersion").eq("id", userId).maybeSingle());
-    if (!user) throw new ActionError("Pengguna tidak ditemukan");
-    must(
-      await db()
-        .from("User")
-        // sessionVersion naik saat dinonaktifkan, jadi sesi lama tidak hidup lagi walau diaktifkan kembali
-        .update(
-          isActive ? { isActive } : { isActive, showWhenInactive, sessionVersion: user.sessionVersion + 1 },
-        )
-        .eq("id", user.id),
-    );
+    let found = 0;
+    for (const chunk of chunks(getIds(userIds))) {
+      const users = must(await db().from("User").select("id, sessionVersion").in("id", chunk));
+      found += users.length;
+      if (users.length === 0) continue;
+      if (isActive) {
+        must(await db().from("User").update({ isActive }).in("id", users.map((user) => user.id)));
+        continue;
+      }
+      // sessionVersion naik saat dinonaktifkan, jadi sesi lama tidak hidup lagi walau diaktifkan kembali.
+      // Nilainya beda tiap akun, jadi diperbarui satu per satu.
+      for (const user of users) {
+        must(
+          await db()
+            .from("User")
+            .update({ isActive, showWhenInactive, sessionVersion: user.sessionVersion + 1 })
+            .eq("id", user.id),
+        );
+      }
+    }
+    if (found === 0) throw new ActionError("Pengguna tidak ditemukan");
   });
   refresh();
   return result;

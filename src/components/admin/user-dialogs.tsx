@@ -7,7 +7,7 @@ import {
   deleteUser,
   renameUser,
   resetUserPin,
-  setUserActive,
+  setUsersActive,
   setUserPin,
   setUserShowWhenInactive,
 } from "@/actions/admin";
@@ -203,74 +203,97 @@ export function UserRowActions({
   );
 }
 
-/**
- * Switch aktif per pengguna: matikan (dengan konfirmasi) untuk menonaktifkan akun, nyalakan untuk
- * mengaktifkan lagi. Saat menonaktifkan, admin memilih akun tetap tampil abu-abu atau disembunyikan.
- */
+const VISIBILITY_OPTIONS = [
+  {
+    value: "show",
+    title: "Tampil abu-abu",
+    description: "Masih terlihat di halaman pilih akun, tapi tidak bisa dipilih.",
+  },
+  { value: "hide", title: "Sembunyikan", description: "Tidak muncul sama sekali di halaman pilih akun." },
+] as const;
+
+/** Konfirmasi menonaktifkan akun, sekaligus memilih akun tetap tampil abu-abu atau disembunyikan. */
+export function DeactivateDialog({
+  id,
+  title,
+  description,
+  open,
+  onOpenChange,
+  onConfirm,
+}: {
+  id: string;
+  title: string;
+  description: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: (showWhenInactive: boolean) => void;
+}) {
+  const [visibility, setVisibility] = useState<"show" | "hide">("show");
+
+  return (
+    <AlertDialog
+      open={open}
+      onOpenChange={(next) => {
+        // Kembali ke pilihan bawaan setiap dialog ditutup
+        if (!next) setVisibility("show");
+        onOpenChange(next);
+      }}
+    >
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <FieldSet>
+          <FieldLegend variant="label">Di halaman pilih akun</FieldLegend>
+          <RadioGroup value={visibility} onValueChange={(value) => setVisibility(value as "show" | "hide")}>
+            {VISIBILITY_OPTIONS.map((option) => (
+              <FieldLabel key={option.value} htmlFor={`inactive-${option.value}-${id}`}>
+                <Field orientation="horizontal">
+                  <FieldContent>
+                    <FieldTitle>{option.title}</FieldTitle>
+                    <FieldDescription>{option.description}</FieldDescription>
+                  </FieldContent>
+                  <RadioGroupItem value={option.value} id={`inactive-${option.value}-${id}`} />
+                </Field>
+              </FieldLabel>
+            ))}
+          </RadioGroup>
+        </FieldSet>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Batal</AlertDialogCancel>
+          <AlertDialogAction variant="destructive" onClick={() => onConfirm(visibility === "show")}>
+            Nonaktifkan
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+/** Switch aktif per pengguna: matikan (dengan konfirmasi) untuk menonaktifkan akun, nyalakan untuk mengaktifkan lagi. */
 export function ActiveToggle({ user }: { user: { id: string; name: string; isActive: boolean } }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [visibility, setVisibility] = useState<"show" | "hide">("show");
   const [pending, run] = useActionRunner();
-  const options = [
-    {
-      value: "show",
-      title: "Tampil abu-abu",
-      description: "Masih terlihat di halaman pilih akun, tapi tidak bisa dipilih.",
-    },
-    { value: "hide", title: "Sembunyikan", description: "Tidak muncul sama sekali di halaman pilih akun." },
-  ] as const;
 
   return (
     <>
       <Switch
         checked={user.isActive}
         disabled={pending}
-        onCheckedChange={(checked) => {
-          if (checked) return run(() => setUserActive(user.id, true), `${user.name} diaktifkan`);
-          setVisibility("show");
-          setConfirmOpen(true);
-        }}
+        onCheckedChange={(checked) =>
+          checked ? run(() => setUsersActive([user.id], true), `${user.name} diaktifkan`) : setConfirmOpen(true)
+        }
         aria-label={`Akun ${user.name} aktif`}
       />
-
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Nonaktifkan {user.name}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {user.name} langsung keluar dari semua perangkat dan tidak bisa dipakai. Titipan dan pesanannya
-              tetap tersimpan, dan akun bisa diaktifkan lagi kapan saja.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <FieldSet>
-            <FieldLegend variant="label">Di halaman pilih akun</FieldLegend>
-            <RadioGroup value={visibility} onValueChange={(value) => setVisibility(value as "show" | "hide")}>
-              {options.map((option) => (
-                <FieldLabel key={option.value} htmlFor={`inactive-${option.value}-${user.id}`}>
-                  <Field orientation="horizontal">
-                    <FieldContent>
-                      <FieldTitle>{option.title}</FieldTitle>
-                      <FieldDescription>{option.description}</FieldDescription>
-                    </FieldContent>
-                    <RadioGroupItem value={option.value} id={`inactive-${option.value}-${user.id}`} />
-                  </Field>
-                </FieldLabel>
-              ))}
-            </RadioGroup>
-          </FieldSet>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              onClick={() =>
-                run(() => setUserActive(user.id, false, visibility === "show"), `${user.name} dinonaktifkan`)
-              }
-            >
-              Nonaktifkan
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeactivateDialog
+        id={user.id}
+        title={`Nonaktifkan ${user.name}?`}
+        description={`${user.name} langsung keluar dari semua perangkat dan tidak bisa dipakai. Titipan dan pesanannya tetap tersimpan, dan akun bisa diaktifkan lagi kapan saja.`}
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        onConfirm={(show) => run(() => setUsersActive([user.id], false, show), `${user.name} dinonaktifkan`)}
+      />
     </>
   );
 }
