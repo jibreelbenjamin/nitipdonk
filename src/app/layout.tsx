@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { NavigationShell } from "@/components/navigation-shell";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -51,6 +52,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <Toaster position="top-center" />
           <ServiceWorkerRegistration />
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
